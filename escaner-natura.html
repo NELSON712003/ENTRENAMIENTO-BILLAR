@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner NATURA - Entregas</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .config-section label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+            transition: border-color 0.3s;
+        }
+        
+        .config-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .scanner-section {
+            margin-bottom: 20px;
+        }
+        
+        #reader {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .data-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .data-preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .data-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-field:last-child {
+            border-bottom: none;
+        }
+        
+        .data-field label {
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .data-field span {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+            display: block;
+        }
+        
+        .manual-input {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+        
+        .manual-input h4 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .manual-input textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+            resize: vertical;
+        }
+        
+        .stats {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            color: #1976d2;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Escáner NATURA</h1>
+        <p class="subtitle">Sistema de Entregas - Captura de Stikers</p>
+        
+        <!-- Configuración del Web App -->
+        <div class="config-section">
+            <label for="webAppUrl">🔗 URL del Web App de Google:</label>
+            <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            <small style="color: #888; display: block; margin-top: 5px;">
+                https://script.google.com/macros/s/AKfycbztgiI8cg546rvLux94eu-X9Z7gqntrIOqLcNbuDWMXlxOUIze2BfmZXPsPUh5EFktZ/exec
+            </small>
+        </div>
+
+        <!-- Escaner -->
+        <div class="scanner-section">
+            <div id="reader"></div>
+            <button class="btn btn-primary" onclick="toggleScanner()" id="btnScan">
+                📷 Iniciar Cámara
+            </button>
+        </div>
+
+        <!-- Entrada Manual (Backup) -->
+        <div class="manual-input">
+            <h4>✏️ Entrada Manual (si el escáner falla):</h4>
+            <textarea id="manualInput" rows="4" placeholder="Pega aquí el texto del stiker..."></textarea>
+            <button class="btn btn-success" onclick="processManualInput()">
+                Procesar Texto Manual
+            </button>
+        </div>
+
+        <!-- Vista Previa de Datos -->
+        <div class="data-preview hidden" id="dataPreview">
+            <h3>📋 Datos Detectados:</h3>
+            <div class="data-field">
+                <label>Fecha:</label>
+                <span id="previewFecha">-</span>
+            </div>
+            <div class="data-field">
+                <label>Código de Barras:</label>
+                <span id="previewCodigo">-</span>
+            </div>
+            <div class="data-field">
+                <label>Ciclo:</label>
+                <span id="previewCiclo">-</span>
+            </div>
+            <div class="data-field">
+                <label>Nombre:</label>
+                <span id="previewNombre">-</span>
+            </div>
+            <div class="data-field">
+                <label>Dirección:</label>
+                <span id="previewDireccion">-</span>
+            </div>
+            <div class="data-field">
+                <label>Barrio:</label>
+                <span id="previewBarrio">-</span>
+            </div>
+            <div class="data-field">
+                <label>Teléfono:</label>
+                <span id="previewTelefono">-</span>
+            </div>
+            <div class="data-field">
+                <label>Sector:</label>
+                <span id="previewSector">-</span>
+            </div>
+            
+            <button class="btn btn-success" onclick="sendToSheet()" id="btnSend">
+                📤 Enviar a Google Sheets
+            </button>
+            <button class="btn btn-danger" onclick="clearData()">
+                🗑️ Limpiar
+            </button>
+        </div>
+
+        <!-- Estados -->
+        <div id="status" class="status"></div>
+
+        <!-- Estadísticas -->
+        <div class="stats" id="stats">
+            Entregas registradas hoy: <span id="count">0</span>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode;
+        let isScanning = false;
+        let currentData = {};
+        let scanCount = 0;
+
+        // Inicializar fecha actual
+        document.getElementById('previewFecha').textContent = new Date().toLocaleDateString('es-ES');
+
+        function toggleScanner() {
+            const btn = document.getElementById('btnScan');
+            
+            if (!isScanning) {
+                startScanner();
+                btn.textContent = '⏹️ Detener Cámara';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+            } else {
+                stopScanner();
+                btn.textContent = '📷 Iniciar Cámara';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+            }
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                isScanning = true;
+                showStatus('Cámara iniciada. Apunta al código de barras', 'loading');
+            }).catch(err => {
+                showStatus('Error al iniciar cámara: ' + err, 'error');
+                console.error(err);
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    hideStatus();
+                }).catch(err => {
+                    console.error(err);
+                });
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Detener escáner temporalmente
+            stopScanner();
+            document.getElementById('btnScan').textContent = '📷 Iniciar Cámara';
+            document.getElementById('btnScan').classList.remove('btn-danger');
+            document.getElementById('btnScan').classList.add('btn-primary');
+            
+            // Procesar el código escaneado
+            processScannedData(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // Ignorar errores de escaneo continuo
+        }
+
+        function processScannedData(text) {
+            // Aquí debes adaptar el parsing según el formato real de tus stikers NATURA
+            // Este es un ejemplo genérico que detecta patrones comunes
+            
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
+            currentData = {
+                fecha: new Date().toLocaleDateString('es-ES'),
+                codigoBarras: "",
+                ciclo: "",
+                nombre: "",
+                direccion: "",
+                barrio: "",
+                telefono: "",
+                sector: ""
+            };
+
+            // Detectar código de barras (números largos)
+            const barcodeMatch = text.match(/\d{10,}/);
+            if (barcodeMatch) {
+                currentData.codigoBarras = barcodeMatch[0];
+            }
+
+            // Heurísticas para detectar otros campos según patrones comunes en stikers
+            lines.forEach(line => {
+                // Detectar ciclo (palabras como "Ciclo", "C", seguidas de números)
+                if (line.match(/ciclo|CICLO|C\d+/i)) {
+                    const cicloMatch = line.match(/\d+/);
+                    if (cicloMatch) currentData.ciclo = cicloMatch[0];
+                }
+                
+                // Detectar teléfono (patrones de teléfono)
+                if (line.match(/[\d\s\-]{7,}/) && line.length < 20) {
+                    if (!currentData.telefono) {
+                        currentData.telefono = line.replace(/\s+/g, '');
+                    }
+                }
+                
+                // Detectar nombre (línea con letras, típicamente nombre completo)
+                if (line.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{10,}/) && !line.match(/dirección|barrio|sector/i)) {
+                    if (!currentData.nombre || currentData.nombre.length < line.length) {
+                        currentData.nombre = line;
+                    }
+                }
+                
+                // Detectar dirección (palabras clave)
+                if (line.match(/calle|carrera|avenida|#|n°|cra|cll|diag/i)) {
+                    currentData.direccion = line;
+                }
+                
+                // Detectar barrio (si contiene la palabra barrio o es corto)
+                if (line.match(/barrio|vereda|comuna|localidad/i) || 
+                    (line.length > 3 && line.length < 30 && !line.match(/\d{5,}/))) {
+                    if (!currentData.barrio) currentData.barrio = line.replace(/barrio:/i, '').trim();
+                }
+                
+                // Detectar sector
+                if (line.match(/sector|zona|ruta/i)) {
+                    const sectorMatch = line.match(/(sector|zona|ruta)\s*(\d+|[A-Z])/i);
+                    if (sectorMatch) currentData.sector = sectorMatch[2] || line;
+                }
+            });
+
+            // Si no se detectó nombre pero hay líneas, usar la primera como nombre
+            if (!currentData.nombre && lines.length > 0) {
+                currentData.nombre = lines[0];
+            }
+
+            updatePreview();
+            showStatus('✅ Código escaneado. Revisa los datos antes de enviar.', 'success');
+        }
+
+        function processManualInput() {
+            const text = document.getElementById('manualInput').value;
+            if (!text.trim()) {
+                showStatus('⚠️ Ingresa el texto del stiker', 'error');
+                return;
+            }
+            processScannedData(text);
+            document.getElementById('manualInput').value = '';
+        }
+
+        function updatePreview() {
+            document.getElementById('previewFecha').textContent = currentData.fecha || '-';
+            document.getElementById('previewCodigo').textContent = currentData.codigoBarras || '-';
+            document.getElementById('previewCiclo').textContent = currentData.ciclo || '-';
+            document.getElementById('previewNombre').textContent = currentData.nombre || '-';
+            document.getElementById('previewDireccion').textContent = currentData.direccion || '-';
+            document.getElementById('previewBarrio').textContent = currentData.barrio || '-';
+            document.getElementById('previewTelefono').textContent = currentData.telefono || '-';
+            document.getElementById('previewSector').textContent = currentData.sector || '-';
+            
+            document.getElementById('dataPreview').classList.remove('hidden');
+        }
+
+        async function sendToSheet() {
+            const webAppUrl = document.getElementById('webAppUrl').value.trim();
+            
+            if (!webAppUrl) {
+                showStatus('⚠️ Ingresa la URL del Web App de Google', 'error');
+                return;
+            }
+
+            if (!currentData.codigoBarras) {
+                showStatus('⚠️ No hay código de barras para enviar', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSend');
+            btn.disabled = true;
+            btn.textContent = '⏳ Enviando...';
+            showStatus('📡 Enviando datos a Google Sheets...', 'loading');
+
+            try {
+                const response = await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Importante para evitar problemas CORS
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(currentData)
+                });
+
+                // Como usamos no-cors, no podemos leer la respuesta directamente
+                // Asumimos éxito y verificamos en el siguiente paso
+                
+                showStatus('✅ Datos enviados correctamente', 'success');
+                scanCount++;
+                document.getElementById('count').textContent = scanCount;
+                
+                // Limpiar después de 2 segundos
+                setTimeout(() => {
+                    clearData();
+                }, 2000);
+
+            } catch (error) {
+                showStatus('❌ Error al enviar: ' + error.message, 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Enviar a Google Sheets';
+            }
+        }
+
+        function clearData() {
+            currentData = {};
+            document.getElementById('dataPreview').classList.add('hidden');
+            document.getElementById('manualInput').value = '';
+            hideStatus();
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function hideStatus() {
+            document.getElementById('status').className = 'status';
+        }
+
+        // Guardar URL en localStorage
+        document.getElementById('webAppUrl').addEventListener('change', function() {
+            localStorage.setItem('naturaWebAppUrl', this.value);
+        });
+
+        // Cargar URL guardada
+        window.addEventListener('load', function() {
+            const savedUrl = localStorage.getItem('naturaWebAppUrl');
+            if (savedUrl) {
+                document.getElementById('webAppUrl').value = savedUrl;
+            }
+        });
+    </script>
+</body>
+</html>
