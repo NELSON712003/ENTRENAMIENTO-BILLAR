@@ -80,13 +80,68 @@
             border: 3px solid #667eea;
         }
 
+        /* CONTROLES EN FILA */
         .controls {
-            display: grid;
+            display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
 
-        button {
+        .controls button {
+            flex: 1;
+            padding: 15px 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        /* BOTÓN DETENER (ROJO) - IZQUIERDA */
+        .btn-stop {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,107,107,0.4);
+        }
+
+        .btn-stop:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* BOTÓN INICIO (VERDE CLARO) - DERECHA */
+        .btn-start {
+            background: linear-gradient(135deg, #90EE90, #7FCD7F);
+            color: #1a472a;
+            border: 2px solid #7FCD7F;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(144,238,144,0.5);
+        }
+
+        .btn-start:disabled {
+            background: #e0e0e0;
+            color: #999;
+            border-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-manual {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            width: 100%;
             padding: 15px 20px;
             border: none;
             border-radius: 12px;
@@ -95,38 +150,7 @@
             cursor: pointer;
             transition: all 0.3s;
             text-transform: uppercase;
-        }
-
-        /* BOTÓN TOGGLE DETENER/INICIAR */
-        .btn-toggle {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-toggle:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(255,107,107,0.4);
-        }
-
-        /* Estado verde (Iniciar) */
-        .btn-toggle.iniciar {
-            background: linear-gradient(135deg, #28a745, #20c997);
-        }
-
-        .btn-toggle.iniciar:hover {
-            box-shadow: 0 5px 20px rgba(40,167,69,0.4);
-        }
-
-        /* Animación de transición de color */
-        .btn-toggle {
-            transition: all 0.5s ease;
-        }
-
-        .btn-manual {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
+            margin-top: 10px;
         }
 
         .btn-manual:hover {
@@ -137,6 +161,15 @@
         .btn-send {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
         }
 
         .btn-send:hover {
@@ -300,6 +333,13 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+
+        /* Separador visual */
+        .controls-separator {
+            width: 2px;
+            background: #ddd;
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -320,16 +360,19 @@
 
         <div id="reader"></div>
 
+        <!-- DOS BOTONES EN FILA -->
         <div class="controls">
-            <!-- BOTÓN TOGGLE ÚNICO -->
-            <button id="btnToggle" class="btn-toggle" onclick="toggleCamara()">
-                ⏹️ DETENER CÁMARA Y ENVIAR
+            <button id="btnStop" class="btn-stop" onclick="detenerCamara()">
+                ⏹️ DETENER Y ENVIAR
             </button>
-            
-            <button class="btn-manual" onclick="toggleManual()">
-                ✏️ ENTRADA MANUAL
+            <button id="btnStart" class="btn-start" onclick="iniciarNuevoEscaneo()" disabled>
+                ▶️ INICIO
             </button>
         </div>
+
+        <button class="btn-manual" onclick="toggleManual()">
+            ✏️ ENTRADA MANUAL
+        </button>
 
         <div class="contador">
             <span id="contador">0</span> códigos en historial
@@ -394,7 +437,7 @@
         };
 
         function iniciarEscanner() {
-            html5QrCode = new Html5Qancode("reader");
+            html5QrCode = new Html5Qrcode("reader");
             
             const config = {
                 fps: 10,
@@ -495,15 +538,6 @@
             document.getElementById('contador').textContent = historial.length;
         }
 
-        // FUNCIÓN TOGGLE PRINCIPAL
-        function toggleCamara() {
-            if (escaneando) {
-                detenerCamara();
-            } else {
-                iniciarNuevoEscaneo();
-            }
-        }
-
         function detenerCamara() {
             if (!escaneando) return;
             
@@ -541,19 +575,20 @@
         }
 
         function actualizarEstadoUI(activo) {
-            const btn = document.getElementById('btnToggle');
+            const btnStop = document.getElementById('btnStop');
+            const btnStart = document.getElementById('btnStart');
             const status = document.getElementById('status');
             
             if (activo) {
-                // Estado ESCANEANDO (Rojo - Detener)
-                btn.classList.remove('iniciar');
-                btn.innerHTML = '⏹️ DETENER CÁMARA Y ENVIAR';
+                // Estado ESCANEANDO
+                btnStop.disabled = false;
+                btnStart.disabled = true;
                 status.innerHTML = '<span class="estado-indicador activo"></span> ESCANEANDO - Listo para capturar códigos';
                 status.className = 'status escaneando';
             } else {
-                // Estado DETENIDO (Verde - Iniciar)
-                btn.classList.add('iniciar');
-                btn.innerHTML = '▶️ INICIAR NUEVO ESCANEO';
+                // Estado DETENIDO
+                btnStop.disabled = true;
+                btnStart.disabled = false;
                 status.innerHTML = '<span class="estado-indicador pausado"></span> PAUSADO - Listo para nuevo escaneo';
                 status.className = 'status pausado';
             }
@@ -597,13 +632,15 @@
                 alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
                 document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⚠️ CONFIGURA LA URL PRIMERO';
                 document.getElementById('status').className = 'status pausado';
+                // Habilitar botón de inicio aunque haya error
+                actualizarEstadoUI(false);
                 return;
             }
 
             const sheetName = document.getElementById('sheetName').value || 'DIA';
 
             if (historial.length === 0) {
-                // Si no hay historial, solo cambiar el botón a verde
+                // Si no hay historial, solo cambiar estado
                 actualizarEstadoUI(false);
                 return;
             }
@@ -628,18 +665,14 @@
                 document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ✅ ENVIADOS ' + historial.length + ' REGISTROS';
                 document.getElementById('status').className = 'status pausado';
                 
-                // Cambiar botón a verde (Iniciar) automáticamente después de enviar
-                setTimeout(() => {
-                    actualizarEstadoUI(false);
-                }, 1000);
+                // Habilitar botón de inicio después de enviar
+                actualizarEstadoUI(false);
             }).catch(err => {
                 console.error('Error:', err);
                 document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ❌ ERROR AL ENVIAR';
                 document.getElementById('status').className = 'status error-msg';
-                // Aún así cambiar a modo iniciar para permitir reintentar
-                setTimeout(() => {
-                    actualizarEstadoUI(false);
-                }, 2000);
+                // Aún así habilitar botón de inicio para reintentar
+                actualizarEstadoUI(false);
             });
         }
 
