@@ -223,9 +223,9 @@
         <!-- Configuración del Web App -->
         <div class="config-section">
             <label for="webAppUrl">🔗 NELSON ACERO SANDOVL:</label>
-            <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/AKfycbwYJsw1plry88BqVBIWn7RomeymkzCvZWIYi_XYRFVZZ_Smmb4jQWIbs_qYMAEY8QLN/exec">
             <small style="color: #888; display: block; margin-top: 5px;">
-              https://script.google.com/macros/s/AKfycbwYJsw1plry88BqVBIWn7RomeymkzCvZWIYi_XYRFVZZ_Smmb4jQWIbs_qYMAEY8QLN/exec
+              
             </small>
         </div>
 
@@ -266,6 +266,10 @@
                 <span id="previewNombre">-</span>
             </div>
             <div class="data-field">
+                <label>Cedula:</label>
+                <span id="previewNombre">-</span>
+            </div>
+            <div class="data-field">
                 <label>Dirección:</label>
                 <span id="previewDireccion">-</span>
             </div>
@@ -283,7 +287,7 @@
             </div>
             
             <button class="btn btn-success" onclick="sendToSheet()" id="btnSend">
-                📤 Enviar a Google Sheets
+                📤 Enviar
             </button>
             <button class="btn btn-danger" onclick="clearData()">
                 🗑️ Limpiar
@@ -384,6 +388,7 @@
                 codigoBarras: "",
                 ciclo: "",
                 nombre: "",
+                cedula: "",
                 direccion: "",
                 barrio: "",
                 telefono: "",
@@ -402,6 +407,13 @@
                 if (line.match(/ciclo|CICLO|C\d+/i)) {
                     const cicloMatch = line.match(/\d+/);
                     if (cicloMatch) currentData.ciclo = cicloMatch[0];
+                }
+                
+                // Detectar cédula (patrones de numeros)
+                if (line.match(/[\d\s\-]{7,}/) && line.length < 20) {
+                    if (!currentData.cedula) {
+                        currentData.cedula = line.replace(/\s+/g, '');
+                    }
                 }
                 
                 // Detectar teléfono (patrones de teléfono)
@@ -460,6 +472,7 @@
             document.getElementById('previewCodigo').textContent = currentData.codigoBarras || '-';
             document.getElementById('previewCiclo').textContent = currentData.ciclo || '-';
             document.getElementById('previewNombre').textContent = currentData.nombre || '-';
+            document.getElementById('previewCedula').textContent = currentData.cedula || '-';
             document.getElementById('previewDireccion').textContent = currentData.direccion || '-';
             document.getElementById('previewBarrio').textContent = currentData.barrio || '-';
             document.getElementById('previewTelefono').textContent = currentData.telefono || '-';
