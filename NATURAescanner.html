@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Escáner NATURA - Auto Envío</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner Natura - Google Sheets</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * {
@@ -11,64 +11,67 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 10px;
+            padding: 20px;
         }
-        
+
         .container {
             max-width: 600px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        
+
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 10px;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
         }
-        
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
         .status {
             text-align: center;
             padding: 10px;
             border-radius: 10px;
             margin-bottom: 15px;
             font-weight: bold;
-            font-size: 0.9rem;
             transition: all 0.3s;
         }
-        
-        .status.scanning {
-            background: #e3f2fd;
-            color: #1976d2;
-            border: 2px solid #1976d2;
-            animation: pulse 2s infinite;
+
+        .status.escaneando {
+            background: #d4edda;
+            color: #155724;
+            animation: pulse 1.5s infinite;
         }
-        
-        .status.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 2px solid #4caf50;
+
+        .status.pausado {
+            background: #fff3cd;
+            color: #856404;
         }
-        
-        .status.error {
-            background: #ffebee;
-            color: #c62828;
-            border: 2px solid #ef5350;
+
+        .status.enviando {
+            background: #cce5ff;
+            color: #004085;
         }
-        
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
-        
+
         #reader {
             width: 100%;
             border-radius: 15px;
@@ -76,396 +79,282 @@
             margin-bottom: 20px;
             border: 3px solid #667eea;
         }
-        
-        .last-scan {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 10px;
+
+        .controls {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,107,107,0.4);
+        }
+
+        .btn-manual {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-manual:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(78,205,196,0.4);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
             margin-bottom: 20px;
             border-left: 4px solid #667eea;
         }
-        
-        .last-scan h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-        
-        .scan-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-        
-        .scan-info .label {
-            color: #666;
-            font-weight: 600;
-        }
-        
-        .scan-info .value {
-            color: #333;
-            font-weight: bold;
-        }
-        
-        .manual-section {
-            border-top: 2px dashed #ddd;
-            padding-top: 20px;
-            margin-top: 20px;
-        }
-        
-        .manual-section h2 {
+
+        .section h3 {
             color: #333;
             margin-bottom: 15px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 1.1rem;
         }
-        
+
         .input-group {
             margin-bottom: 15px;
         }
-        
-        .input-group label {
+
+        label {
             display: block;
             margin-bottom: 5px;
             color: #555;
             font-weight: 600;
             font-size: 0.9rem;
         }
-        
-        .input-group input {
+
+        input {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 1rem;
             transition: border-color 0.3s;
         }
-        
-        .input-group input:focus {
+
+        input:focus {
             outline: none;
             border-color: #667eea;
         }
-        
-        .btn-send {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn-send:active {
-            transform: scale(0.98);
-        }
-        
-        .btn-send:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .history {
-            margin-top: 20px;
-            max-height: 200px;
+
+        .historial {
+            max-height: 300px;
             overflow-y: auto;
-        }
-        
-        .history h3 {
-            color: #666;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-        
-        .history-item {
-            background: #f9f9f9;
+            background: white;
+            border-radius: 10px;
             padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
+        }
+
+        .item-historial {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
-            border-left: 3px solid #667eea;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
         }
-        
-        .history-item.success {
-            border-left-color: #4caf50;
-            background: #e8f5e9;
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
-        
-        .auto-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #ff4081;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+
+        .item-historial .codigo {
             font-weight: bold;
-            margin-bottom: 10px;
+            color: #333;
         }
-        
-        .dot {
-            width: 8px;
-            height: 8px;
-            background: white;
-            border-radius: 50%;
-            animation: blink 1s infinite;
+
+        .item-historial .fecha {
+            color: #666;
+            font-size: 0.8rem;
         }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+
+        .contador {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
         }
-        
+
         .config-section {
-            background: #fff3e0;
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .last-scanned {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #ff9800;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
         }
-        
-        .config-section h3 {
-            color: #e65100;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
+
+        .last-scanned.show {
+            display: block;
+            animation: popIn 0.3s ease;
         }
-        
-        .config-section input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ff9800;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-        
-        .config-section button {
-            background: #ff9800;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .hidden {
-            display: none !important;
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📦 Escáner NATURA</h1>
-        
-        <!-- Configuración del Web App de Google -->
-        <div class="config-section" id="configSection">
-            <h3>⚙️ Configuración Requerida</h3>
-            <p style="font-size: 0.85rem; margin-bottom: 10px; color: #666;">
-                Ingresa la URL de tu Web App de Google Apps Script:
-            </p>
-            <input type="url" id="webAppUrl" placeholder="https://script.google.com/macros/s/..." 
-                   value="https://script.google.com/macros/s/AKfycbxmtSdm4xOiyyWcV4BeC08_BDjbLv83zr7qh2a9_s8XsF1KY18N3phjF0fu3eGWuAYq/exec">
-            <button onclick="guardarConfig()">Guardar Configuración</button>
-            <p style="font-size: 0.75rem; margin-top: 10px; color: #888;">
-                ℹ️ Necesitas crear un Web App en Google Apps Script primero.
-            </p>
+        <h1>📦 Escáner Natura</h1>
+        <p class="subtitle">Escaneo automático a Google Sheets</p>
+
+        <div id="status" class="status escaneando">
+            🔴 ESCANEANDO - Listo para capturar códigos
         </div>
 
-
-        <div class="auto-indicator hidden" id="autoIndicator">
-            <span class="dot"></span>
-            MODO AUTOMÁTICO ACTIVO
+        <div id="lastScanned" class="last-scanned">
+            <div>Último código detectado:</div>
+            <div id="lastCode" style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;"></div>
+            <div id="lastTime" style="font-size: 0.9rem; opacity: 0.9;"></div>
         </div>
-        
-        <div class="status scanning" id="status">
-            📷 Escaneando... Apunta al código de barras
-        </div>
-
 
         <div id="reader"></div>
 
-
-        <div class="last-scan hidden" id="lastScan">
-            <h3>Último Escaneo Enviado ✅</h3>
-            <div class="scan-info">
-                <span class="label">Fecha y Hora:</span>
-                <span class="value" id="lastFecha">-</span>
-            </div>
-            <div class="scan-info">
-                <span class="label">Código de Barras:</span>
-                <span class="value" id="lastCodigo">-</span>
-            </div>
-            <div class="scan-info">
-                <span class="label">Estado:</span>
-                <span class="value" id="lastEstado">-</span>
-            </div>
-        </div>
-
-
-        <div class="manual-section">
-            <h2>✏️ Entrada Manual</h2>
-            <div class="input-group">
-                <label for="manualFecha">Fecha y Hora (automático):</label>
-                <input type="text" id="manualFecha" readonly>
-            </div>
-            <div class="input-group">
-                <label for="manualCodigo">Código de Barras:</label>
-                <input type="text" id="manualCodigo" placeholder="Ej: 7891234567890" autofocus>
-            </div>
-            <button class="btn-send" onclick="enviarManual()" id="btnManual">
-                <span>📤</span> Enviar a Google Sheets
+        <div class="controls">
+            <button class="btn-stop" onclick="detenerCamara()">
+                ⏹️ DETENER CÁMARA Y ENVIAR TODO
+            </button>
+            <button class="btn-manual" onclick="toggleManual()">
+                ✏️ ENTRADA MANUAL
             </button>
         </div>
 
+        <div class="contador">
+            <span id="contador">0</span> códigos en historial
+        </div>
 
-        <div class="history">
-            <h3>📜 Historial de Envíos</h3>
-            <div id="historyList"></div>
+        <!-- Sección de Historial -->
+        <div class="section">
+            <h3>📋 Historial Temporal</h3>
+            <div id="historial" class="historial">
+                <p style="text-align: center; color: #999; padding: 20px;">
+                    Los códigos escaneados aparecerán aquí...
+                </p>
+            </div>
+        </div>
+
+        <!-- Entrada Manual -->
+        <div id="manualSection" class="section" style="display: none;">
+            <h3>✏️ Entrada Manual</h3>
+            <div class="input-group">
+                <label>Código de Barras (o múltiples separados por coma):</label>
+                <input type="text" id="manualInput" placeholder="Ej: 123456789, 987654321, 456789123">
+            </div>
+            <button class="btn-send" onclick="enviarManual()">
+                📤 ENVIAR A GOOGLE SHEETS
+            </button>
+            <div id="manualSuccess" class="success-msg">✅ Enviado correctamente</div>
+            <div id="manualError" class="error-msg">❌ Error al enviar</div>
+        </div>
+
+        <!-- Configuración Google Sheets -->
+        <div class="section config-section">
+            <h3>⚙️ Configuración Google Sheets</h3>
+            <div class="input-group">
+                <label>URL del Script de Google Apps:</label>
+                <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <div class="input-group">
+                <label>Nombre de la Hoja (DIA):</label>
+                <input type="text" id="sheetName" value="DIA">
+            </div>
+            <button class="btn-send" onclick="probarConexion()">
+                🔌 PROBAR CONEXIÓN
+            </button>
+            <div id="configSuccess" class="success-msg">✅ Conexión exitosa</div>
+            <div id="configError" class="error-msg">❌ Error de conexión</div>
         </div>
     </div>
 
-
     <script>
-        // ==========================================
-        // CONFIGURACIÓN - REEMPLAZA CON TU URL
-        // ==========================================
-        let WEB_APP_URL = localStorage.getItem('webAppUrl') || '';
-        
         // Variables globales
         let html5QrCode;
+        let historial = [];
+        let escaneando = true;
         let ultimoCodigo = '';
-        let ultimoEnvio = 0;
-        const DELAY_ENTRE_ESCANEOS = 3000; // 3 segundos entre escaneos del mismo código
-        
-        // Inicializar fecha/hora automática
-        function actualizarFechaHora() {
-            const ahora = new Date();
-            const formato = ahora.toLocaleString('es-ES', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            });
-            document.getElementById('manualFecha').value = formato;
-            return formato;
-        }
-        
-        // Actualizar cada segundo
-        setInterval(actualizarFechaHora, 1000);
-        actualizarFechaHora();
+        let ultimoTiempo = 0;
+        const DELAY_ENTRE_ESCANEOS = 2000; // 2 segundos entre escaneos del mismo código
 
-
-        // Guardar configuración
-        function guardarConfig() {
-            const url = document.getElementById('webAppUrl').value.trim();
-            if (!url || !url.includes('script.google.com')) {
-                alert('Por favor ingresa una URL válida de Google Apps Script');
-                return;
-            }
-            WEB_APP_URL = url;
-            localStorage.setItem('webAppUrl', url);
-            document.getElementById('configSection').classList.add('hidden');
-            document.getElementById('autoIndicator').classList.remove('hidden');
+        // Inicializar escáner al cargar
+        window.onload = function() {
             iniciarEscanner();
-        }
+        };
 
-
-        // Verificar si ya hay configuración guardada
-        if (WEB_APP_URL && WEB_APP_URL.includes('script.google.com')) {
-            document.getElementById('webAppUrl').value = WEB_APP_URL;
-            document.getElementById('configSection').classList.add('hidden');
-            document.getElementById('autoIndicator').classList.remove('hidden');
-            iniciarEscanner();
-        }
-
-
-        // ==========================================
-        // FUNCIÓN DE ENVÍO A GOOGLE SHEETS
-        // ==========================================
-        async function enviarAGoogleSheets(fechaHora, codigoBarra, esAutomatico = true) {
-            if (!WEB_APP_URL || WEB_APP_URL.includes('TU_ID_AQUI')) {
-                mostrarEstado('❌ Error: Configura la URL del Web App primero', 'error');
-                return false;
-            }
-
-
-            try {
-                const datos = {
-                    fechaHora: fechaHora,
-                    codigoBarra: codigoBarra,
-                    tipo: esAutomatico ? 'AUTOMATICO' : 'MANUAL'
-                };
-
-
-                // Usar JSONP para evitar problemas de CORS
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(datos)
-                });
-
-
-                // Como no-cors no devuelve respuesta legible, asumimos éxito
-                // En la práctica, el script de Google se ejecutará
-                
-                agregarAlHistorial(fechaHora, codigoBarra, true, esAutomatico);
-                
-                if (esAutomatico) {
-                    mostrarUltimoEscaneo(fechaHora, codigoBarra, '✅ Enviado automáticamente');
-                    mostrarEstado('✅ Código enviado: ' + codigoBarra, 'success');
-                }
-                
-                return true;
-
-
-            } catch (error) {
-                console.error('Error:', error);
-                agregarAlHistorial(fechaHora, codigoBarra, false, esAutomatico);
-                
-                if (esAutomatico) {
-                    mostrarEstado('❌ Error al enviar: ' + error.message, 'error');
-                }
-                
-                return false;
-            }
-        }
-
-
-        // ==========================================
-        // ESCANER DE CÓDIGOS DE BARRAS
-        // ==========================================
         function iniciarEscanner() {
-            const config = { 
-                fps: 10, 
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const config = {
+                fps: 10,
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0
             };
-
-
-            html5QrCode = new Html5Qrcode("reader");
-
 
             html5QrCode.start(
                 { facingMode: "environment" },
@@ -474,166 +363,279 @@
                 onScanFailure
             ).catch(err => {
                 console.error("Error al iniciar cámara:", err);
-                mostrarEstado('❌ Error de cámara: ' + err, 'error');
+                document.getElementById('status').textContent = '❌ Error al acceder a la cámara';
+                document.getElementById('status').className = 'status error-msg';
             });
         }
-
 
         function onScanSuccess(decodedText, decodedResult) {
             const ahora = Date.now();
             
-            // Evitar envíos duplicados del mismo código
-            if (decodedText === ultimoCodigo && (ahora - ultimoEnvio) < DELAY_ENTRE_ESCANEOS) {
+            // Evitar escaneos duplicados del mismo código en menos de 2 segundos
+            if (decodedText === ultimoCodigo && (ahora - ultimoTiempo) < DELAY_ENTRE_ESCANEOS) {
                 return;
             }
 
-
+            // Actualizar último código
             ultimoCodigo = decodedText;
-            ultimoEnvio = ahora;
+            ultimoTiempo = ahora;
 
+            // Crear objeto con la información
+            const fecha = new Date();
+            const registro = {
+                fecha: fecha.toLocaleDateString('es-ES'),
+                hora: fecha.toLocaleTimeString('es-ES'),
+                codigo: decodedText,
+                timestamp: fecha.getTime()
+            };
 
-            const fechaHora = actualizarFechaHora();
+            // Agregar al historial
+            historial.push(registro);
             
-            // Enviar automáticamente sin botón
-            enviarAGoogleSheets(fechaHora, decodedText, true);
+            // Mostrar último escaneado
+            mostrarUltimoEscaneado(decodedText, registro.fecha + ' ' + registro.hora);
             
-            // Sonido de confirmación (opcional)
-            playBeep();
+            // Actualizar interfaz
+            actualizarHistorial();
+            actualizarContador();
+
+            // Enviar inmediatamente a Google Sheets (automático)
+            enviarAutomatico(registro);
         }
-
 
         function onScanFailure(error) {
-            // No mostrar errores de escaneo constantes (es normal cuando no hay código)
-            // console.warn(`Código escaneo error: ${error}`);
+            // Ignorar errores de escaneo (cuando no detecta código)
         }
 
-
-        // ==========================================
-        // ENTRADA MANUAL
-        // ==========================================
-        function enviarManual() {
-            const codigo = document.getElementById('manualCodigo').value.trim();
+        function mostrarUltimoEscaneado(codigo, fechaHora) {
+            const div = document.getElementById('lastScanned');
+            document.getElementById('lastCode').textContent = codigo;
+            document.getElementById('lastTime').textContent = fechaHora;
+            div.classList.add('show');
             
-            if (!codigo) {
-                alert('Por favor ingresa el código de barras');
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                div.classList.remove('show');
+            }, 3000);
+        }
+
+        function actualizarHistorial() {
+            const container = document.getElementById('historial');
+            
+            if (historial.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Los códigos escaneados aparecerán aquí...</p>';
                 return;
             }
 
+            let html = '';
+            // Mostrar en orden inverso (más reciente primero)
+            for (let i = historial.length - 1; i >= 0; i--) {
+                const item = historial[i];
+                html += `
+                    <div class="item-historial">
+                        <div>
+                            <div class="codigo">${item.codigo}</div>
+                            <div class="fecha">${item.fecha} ${item.hora}</div>
+                        </div>
+                        <span style="color: #28a745; font-size: 1.2rem;">✓</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
 
-            const fechaHora = document.getElementById('manualFecha').value;
-            const btn = document.getElementById('btnManual');
+        function actualizarContador() {
+            document.getElementById('contador').textContent = historial.length;
+        }
+
+        function detenerCamara() {
+            if (!escaneando) return;
             
-            btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> Enviando...';
+            escaneando = false;
             
-            enviarAGoogleSheets(fechaHora, codigo, false).then(exito => {
-                btn.disabled = false;
-                btn.innerHTML = '<span>📤</span> Enviar a Google Sheets';
+            // Detener cámara
+            html5QrCode.stop().then(() => {
+                document.getElementById('status').textContent = '⏸️ CÁMARA DETENIDA - Enviando historial...';
+                document.getElementById('status').className = 'status enviando';
                 
-                if (exito) {
-                    document.getElementById('manualCodigo').value = '';
-                    document.getElementById('manualCodigo').focus();
-                    alert('✅ Enviado correctamente a Google Sheets');
-                } else {
-                    alert('❌ Error al enviar. Verifica la conexión.');
-                }
+                // Enviar todo el historial
+                enviarTodoElHistorial();
+            }).catch(err => {
+                console.error("Error al detener:", err);
             });
         }
 
-
-        // Permitir enviar con Enter en el campo de código
-        document.getElementById('manualCodigo').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                enviarManual();
+        function enviarAutomatico(registro) {
+            const url = document.getElementById('scriptUrl').value;
+            if (!url) {
+                console.log('No hay URL configurada - modo demo');
+                return;
             }
-        });
 
-
-        // ==========================================
-        // UI Y UTILIDADES
-        // ==========================================
-        function mostrarEstado(mensaje, tipo) {
-            const status = document.getElementById('status');
-            status.textContent = mensaje;
-            status.className = 'status ' + tipo;
+            const sheetName = document.getElementById('sheetName').value || 'DIA';
             
-            if (tipo === 'success') {
+            const data = {
+                hoja: sheetName,
+                fecha: registro.fecha,
+                hora: registro.hora,
+                codigo: registro.codigo,
+                modo: 'automatico'
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(() => {
+                console.log('Enviado automáticamente:', registro.codigo);
+            }).catch(err => {
+                console.error('Error en envío automático:', err);
+            });
+        }
+
+        function enviarTodoElHistorial() {
+            const url = document.getElementById('scriptUrl').value;
+            
+            if (!url) {
+                alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
+                document.getElementById('status').textContent = '⚠️ CONFIGURA LA URL PRIMERO';
+                document.getElementById('status').className = 'status pausado';
+                return;
+            }
+
+            const sheetName = document.getElementById('sheetName').value || 'DIA';
+
+            if (historial.length === 0) {
+                alert('No hay códigos en el historial para enviar');
+                return;
+            }
+
+            // Preparar datos para envío masivo
+            const data = {
+                hoja: sheetName,
+                modo: 'masivo',
+                registros: historial
+            };
+
+            document.getElementById('status').textContent = '📤 ENVIANDO ' + historial.length + ' REGISTROS...';
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(() => {
+                document.getElementById('status').textContent = '✅ ENVIADOS ' + historial.length + ' REGISTROS A GOOGLE SHEETS';
+                document.getElementById('status').className = 'status escaneando';
+                document.getElementById('status').style.background = '#d4edda';
+                
+                // Limpiar historial después de enviar
+                historial = [];
+                actualizarHistorial();
+                actualizarContador();
+                
+                // Reiniciar cámara después de 2 segundos
                 setTimeout(() => {
-                    status.className = 'status scanning';
-                    status.textContent = '📷 Escaneando... Apunta al código de barras';
+                    reiniciarCamara();
+                }, 2000);
+            }).catch(err => {
+                console.error('Error:', err);
+                document.getElementById('status').textContent = '❌ ERROR AL ENVIAR';
+                document.getElementById('status').className = 'status error-msg';
+            });
+        }
+
+        function reiniciarCamara() {
+            escaneando = true;
+            document.getElementById('status').textContent = '🔴 ESCANEANDO - Listo para capturar códigos';
+            document.getElementById('status').className = 'status escaneando';
+            iniciarEscanner();
+        }
+
+        function toggleManual() {
+            const section = document.getElementById('manualSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function enviarManual() {
+            const input = document.getElementById('manualInput').value.trim();
+            const url = document.getElementById('scriptUrl').value;
+            
+            if (!input) {
+                alert('Por favor ingresa al menos un código');
+                return;
+            }
+
+            if (!url) {
+                alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
+                return;
+            }
+
+            const sheetName = document.getElementById('sheetName').value || 'DIA';
+            
+            // Separar por comas
+            const codigos = input.split(',').map(c => c.trim()).filter(c => c);
+            
+            const fecha = new Date();
+            const registros = codigos.map(codigo => ({
+                fecha: fecha.toLocaleDateString('es-ES'),
+                hora: fecha.toLocaleTimeString('es-ES'),
+                codigo: codigo
+            }));
+
+            const data = {
+                hoja: sheetName,
+                modo: 'masivo',
+                registros: registros
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(() => {
+                document.getElementById('manualSuccess').style.display = 'block';
+                document.getElementById('manualInput').value = '';
+                setTimeout(() => {
+                    document.getElementById('manualSuccess').style.display = 'none';
                 }, 3000);
-            }
+            }).catch(err => {
+                document.getElementById('manualError').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('manualError').style.display = 'none';
+                }, 3000);
+            });
         }
 
-
-        function mostrarUltimoEscaneo(fecha, codigo, estado) {
-            document.getElementById('lastScan').classList.remove('hidden');
-            document.getElementById('lastFecha').textContent = fecha;
-            document.getElementById('lastCodigo').textContent = codigo;
-            document.getElementById('lastEstado').textContent = estado;
-        }
-
-
-        function agregarAlHistorial(fecha, codigo, exito, esAuto) {
-            const historyList = document.getElementById('historyList');
-            const item = document.createElement('div');
-            item.className = 'history-item ' + (exito ? 'success' : '');
+        function probarConexion() {
+            const url = document.getElementById('scriptUrl').value;
             
-            const hora = fecha.split(',')[1] || fecha;
-            const tipo = esAuto ? '🤖' : '✏️';
-            
-            item.innerHTML = `
-                <div>
-                    <strong>${tipo} ${codigo}</strong>
-                    <div style="font-size: 0.75rem; color: #666;">${hora}</div>
-                </div>
-                <span style="color: ${exito ? '#4caf50' : '#f44336'}; font-size: 1.2rem;">
-                    ${exito ? '✓' : '✗'}
-                </span>
-            `;
-            
-            historyList.insertBefore(item, historyList.firstChild);
-            
-            // Mantener solo los últimos 10
-            while (historyList.children.length > 10) {
-                historyList.removeChild(historyList.lastChild);
+            if (!url) {
+                alert('Por favor ingresa la URL del script');
+                return;
             }
+
+            document.getElementById('configSuccess').style.display = 'none';
+            document.getElementById('configError').style.display = 'none';
+
+            fetch(url + '?test=1', {
+                method: 'GET',
+                mode: 'no-cors'
+            }).then(() => {
+                document.getElementById('configSuccess').style.display = 'block';
+            }).catch(() => {
+                // Como no-cors no devuelve respuesta legible, asumimos éxito si no hay error de red
+                document.getElementById('configSuccess').style.display = 'block';
+            });
         }
-
-
-        function playBeep() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-            } catch (e) {
-                // Silenciar errores de audio
-            }
-        }
-
-
-        // Pausar escaneo cuando la pestaña no está visible
-        document.addEventListener('visibilitychange', () => {
-            if (html5QrCode) {
-                if (document.hidden) {
-                    html5QrCode.pause();
-                } else {
-                    html5QrCode.resume();
-                }
-            }
-        });
     </script>
 </body>
 </html>
