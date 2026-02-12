@@ -97,14 +97,31 @@
             text-transform: uppercase;
         }
 
-        .btn-stop {
+        /* BOTÓN TOGGLE DETENER/INICIAR */
+        .btn-toggle {
             background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
             color: white;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-stop:hover {
+        .btn-toggle:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(255,107,107,0.4);
+        }
+
+        /* Estado verde (Iniciar) */
+        .btn-toggle.iniciar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-toggle.iniciar:hover {
+            box-shadow: 0 5px 20px rgba(40,167,69,0.4);
+        }
+
+        /* Animación de transición de color */
+        .btn-toggle {
+            transition: all 0.5s ease;
         }
 
         .btn-manual {
@@ -258,6 +275,31 @@
             0% { transform: scale(0.8); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
+
+        /* Indicador visual del estado */
+        .estado-indicador {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+
+        .estado-indicador.activo {
+            background: #28a745;
+            box-shadow: 0 0 10px #28a745;
+        }
+
+        .estado-indicador.pausado {
+            background: #dc3545;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
@@ -266,7 +308,8 @@
         <p class="subtitle">Escaneo automático a Google Sheets</p>
 
         <div id="status" class="status escaneando">
-            🔴 ESCANEANDO - Listo para capturar códigos
+            <span class="estado-indicador activo"></span>
+            ESCANEANDO - Listo para capturar códigos
         </div>
 
         <div id="lastScanned" class="last-scanned">
@@ -278,9 +321,11 @@
         <div id="reader"></div>
 
         <div class="controls">
-            <button class="btn-stop" onclick="detenerCamara()">
-                ⏹️ DETENER CÁMARA Y ENVIAR TODO
+            <!-- BOTÓN TOGGLE ÚNICO -->
+            <button id="btnToggle" class="btn-toggle" onclick="toggleCamara()">
+                ⏹️ DETENER CÁMARA Y ENVIAR
             </button>
+            
             <button class="btn-manual" onclick="toggleManual()">
                 ✏️ ENTRADA MANUAL
             </button>
@@ -349,7 +394,7 @@
         };
 
         function iniciarEscanner() {
-            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode = new Html5Qancode("reader");
             
             const config = {
                 fps: 10,
@@ -364,7 +409,8 @@
                 onScanFailure
             ).catch(err => {
                 console.error("Error al iniciar cámara:", err);
-                document.getElementById('status').textContent = '❌ Error al acceder a la cámara';
+                actualizarEstadoUI(false);
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ❌ Error al acceder a la cámara';
                 document.getElementById('status').className = 'status error-msg';
             });
         }
@@ -449,6 +495,15 @@
             document.getElementById('contador').textContent = historial.length;
         }
 
+        // FUNCIÓN TOGGLE PRINCIPAL
+        function toggleCamara() {
+            if (escaneando) {
+                detenerCamara();
+            } else {
+                iniciarNuevoEscaneo();
+            }
+        }
+
         function detenerCamara() {
             if (!escaneando) return;
             
@@ -456,7 +511,8 @@
             
             // Detener cámara
             html5QrCode.stop().then(() => {
-                document.getElementById('status').textContent = '⏸️ CÁMARA DETENIDA - Enviando historial...';
+                actualizarEstadoUI(false);
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⏸️ DETENIDO - Enviando historial...';
                 document.getElementById('status').className = 'status enviando';
                 
                 // Enviar todo el historial
@@ -464,6 +520,43 @@
             }).catch(err => {
                 console.error("Error al detener:", err);
             });
+        }
+
+        function iniciarNuevoEscaneo() {
+            // Limpiar historial anterior
+            historial = [];
+            actualizarHistorial();
+            actualizarContador();
+            
+            // Reiniciar variables de control
+            ultimoCodigo = '';
+            ultimoTiempo = 0;
+            
+            // Actualizar UI
+            escaneando = true;
+            actualizarEstadoUI(true);
+            
+            // Reiniciar cámara
+            iniciarEscanner();
+        }
+
+        function actualizarEstadoUI(activo) {
+            const btn = document.getElementById('btnToggle');
+            const status = document.getElementById('status');
+            
+            if (activo) {
+                // Estado ESCANEANDO (Rojo - Detener)
+                btn.classList.remove('iniciar');
+                btn.innerHTML = '⏹️ DETENER CÁMARA Y ENVIAR';
+                status.innerHTML = '<span class="estado-indicador activo"></span> ESCANEANDO - Listo para capturar códigos';
+                status.className = 'status escaneando';
+            } else {
+                // Estado DETENIDO (Verde - Iniciar)
+                btn.classList.add('iniciar');
+                btn.innerHTML = '▶️ INICIAR NUEVO ESCANEO';
+                status.innerHTML = '<span class="estado-indicador pausado"></span> PAUSADO - Listo para nuevo escaneo';
+                status.className = 'status pausado';
+            }
         }
 
         function enviarAutomatico(registro) {
@@ -502,7 +595,7 @@
             
             if (!url) {
                 alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
-                document.getElementById('status').textContent = '⚠️ CONFIGURA LA URL PRIMERO';
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⚠️ CONFIGURA LA URL PRIMERO';
                 document.getElementById('status').className = 'status pausado';
                 return;
             }
@@ -510,7 +603,8 @@
             const sheetName = document.getElementById('sheetName').value || 'DIA';
 
             if (historial.length === 0) {
-                alert('No hay códigos en el historial para enviar');
+                // Si no hay historial, solo cambiar el botón a verde
+                actualizarEstadoUI(false);
                 return;
             }
 
@@ -521,7 +615,7 @@
                 registros: historial
             };
 
-            document.getElementById('status').textContent = '📤 ENVIANDO ' + historial.length + ' REGISTROS...';
+            document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> 📤 ENVIANDO ' + historial.length + ' REGISTROS...';
 
             fetch(url, {
                 method: 'POST',
@@ -531,31 +625,22 @@
                 },
                 body: JSON.stringify(data)
             }).then(() => {
-                document.getElementById('status').textContent = '✅ ENVIADOS ' + historial.length + ' REGISTROS A GOOGLE SHEETS';
-                document.getElementById('status').className = 'status escaneando';
-                document.getElementById('status').style.background = '#d4edda';
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ✅ ENVIADOS ' + historial.length + ' REGISTROS';
+                document.getElementById('status').className = 'status pausado';
                 
-                // Limpiar historial después de enviar
-                historial = [];
-                actualizarHistorial();
-                actualizarContador();
-                
-                // Reiniciar cámara después de 2 segundos
+                // Cambiar botón a verde (Iniciar) automáticamente después de enviar
                 setTimeout(() => {
-                    reiniciarCamara();
-                }, 2000);
+                    actualizarEstadoUI(false);
+                }, 1000);
             }).catch(err => {
                 console.error('Error:', err);
-                document.getElementById('status').textContent = '❌ ERROR AL ENVIAR';
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ❌ ERROR AL ENVIAR';
                 document.getElementById('status').className = 'status error-msg';
+                // Aún así cambiar a modo iniciar para permitir reintentar
+                setTimeout(() => {
+                    actualizarEstadoUI(false);
+                }, 2000);
             });
-        }
-
-        function reiniciarCamara() {
-            escaneando = true;
-            document.getElementById('status').textContent = '🔴 ESCANEANDO - Listo para capturar códigos';
-            document.getElementById('status').className = 'status escaneando';
-            iniciarEscanner();
         }
 
         function toggleManual() {
