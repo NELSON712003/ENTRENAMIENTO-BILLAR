@@ -280,7 +280,7 @@
                 Ingresa la URL de tu Web App de Google Apps Script:
             </p>
             <input type="url" id="webAppUrl" placeholder="https://script.google.com/macros/s/..." 
-                   value="https://script.google.com/macros/s/TU_ID_AQUI/exec">
+                   value="https://script.google.com/macros/s/AKfycbxmtSdm4xOiyyWcV4BeC08_BDjbLv83zr7qh2a9_s8XsF1KY18N3phjF0fu3eGWuAYq/exec">
             <button onclick="guardarConfig()">Guardar Configuración</button>
             <p style="font-size: 0.75rem; margin-top: 10px; color: #888;">
                 ℹ️ Necesitas crear un Web App en Google Apps Script primero.
