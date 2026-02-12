@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escáner NATURA - Auto Envío</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .status.scanning {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+            animation: pulse 2s infinite;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ef5350;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        #reader {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 3px solid #667eea;
+        }
+        
+        .last-scan {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .last-scan h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        
+        .scan-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .scan-info .label {
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .scan-info .value {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .manual-section {
+            border-top: 2px dashed #ddd;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        
+        .manual-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-send {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-send:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-send:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .history {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history h3 {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .history-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-left: 3px solid #667eea;
+        }
+        
+        .history-item.success {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        
+        .auto-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ff4081;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .config-section {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ff9800;
+        }
+        
+        .config-section h3 {
+            color: #e65100;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ff9800;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .config-section button {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Escáner NATURA</h1>
+        
+        <!-- Configuración del Web App de Google -->
+        <div class="config-section" id="configSection">
+            <h3>⚙️ Configuración Requerida</h3>
+            <p style="font-size: 0.85rem; margin-bottom: 10px; color: #666;">
+                Ingresa la URL de tu Web App de Google Apps Script:
+            </p>
+            <input type="url" id="webAppUrl" placeholder="https://script.google.com/macros/s/..." 
+                   value="https://script.google.com/macros/s/TU_ID_AQUI/exec">
+            <button onclick="guardarConfig()">Guardar Configuración</button>
+            <p style="font-size: 0.75rem; margin-top: 10px; color: #888;">
+                ℹ️ Necesitas crear un Web App en Google Apps Script primero.
+            </p>
+        </div>
+
+
+        <div class="auto-indicator hidden" id="autoIndicator">
+            <span class="dot"></span>
+            MODO AUTOMÁTICO ACTIVO
+        </div>
+        
+        <div class="status scanning" id="status">
+            📷 Escaneando... Apunta al código de barras
+        </div>
+
+
+        <div id="reader"></div>
+
+
+        <div class="last-scan hidden" id="lastScan">
+            <h3>Último Escaneo Enviado ✅</h3>
+            <div class="scan-info">
+                <span class="label">Fecha y Hora:</span>
+                <span class="value" id="lastFecha">-</span>
+            </div>
+            <div class="scan-info">
+                <span class="label">Código de Barras:</span>
+                <span class="value" id="lastCodigo">-</span>
+            </div>
+            <div class="scan-info">
+                <span class="label">Estado:</span>
+                <span class="value" id="lastEstado">-</span>
+            </div>
+        </div>
+
+
+        <div class="manual-section">
+            <h2>✏️ Entrada Manual</h2>
+            <div class="input-group">
+                <label for="manualFecha">Fecha y Hora (automático):</label>
+                <input type="text" id="manualFecha" readonly>
+            </div>
+            <div class="input-group">
+                <label for="manualCodigo">Código de Barras:</label>
+                <input type="text" id="manualCodigo" placeholder="Ej: 7891234567890" autofocus>
+            </div>
+            <button class="btn-send" onclick="enviarManual()" id="btnManual">
+                <span>📤</span> Enviar a Google Sheets
+            </button>
+        </div>
+
+
+        <div class="history">
+            <h3>📜 Historial de Envíos</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN - REEMPLAZA CON TU URL
+        // ==========================================
+        let WEB_APP_URL = localStorage.getItem('webAppUrl') || '';
+        
+        // Variables globales
+        let html5QrCode;
+        let ultimoCodigo = '';
+        let ultimoEnvio = 0;
+        const DELAY_ENTRE_ESCANEOS = 3000; // 3 segundos entre escaneos del mismo código
+        
+        // Inicializar fecha/hora automática
+        function actualizarFechaHora() {
+            const ahora = new Date();
+            const formato = ahora.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('manualFecha').value = formato;
+            return formato;
+        }
+        
+        // Actualizar cada segundo
+        setInterval(actualizarFechaHora, 1000);
+        actualizarFechaHora();
+
+
+        // Guardar configuración
+        function guardarConfig() {
+            const url = document.getElementById('webAppUrl').value.trim();
+            if (!url || !url.includes('script.google.com')) {
+                alert('Por favor ingresa una URL válida de Google Apps Script');
+                return;
+            }
+            WEB_APP_URL = url;
+            localStorage.setItem('webAppUrl', url);
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('autoIndicator').classList.remove('hidden');
+            iniciarEscanner();
+        }
+
+
+        // Verificar si ya hay configuración guardada
+        if (WEB_APP_URL && WEB_APP_URL.includes('script.google.com')) {
+            document.getElementById('webAppUrl').value = WEB_APP_URL;
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('autoIndicator').classList.remove('hidden');
+            iniciarEscanner();
+        }
+
+
+        // ==========================================
+        // FUNCIÓN DE ENVÍO A GOOGLE SHEETS
+        // ==========================================
+        async function enviarAGoogleSheets(fechaHora, codigoBarra, esAutomatico = true) {
+            if (!WEB_APP_URL || WEB_APP_URL.includes('TU_ID_AQUI')) {
+                mostrarEstado('❌ Error: Configura la URL del Web App primero', 'error');
+                return false;
+            }
+
+
+            try {
+                const datos = {
+                    fechaHora: fechaHora,
+                    codigoBarra: codigoBarra,
+                    tipo: esAutomatico ? 'AUTOMATICO' : 'MANUAL'
+                };
+
+
+                // Usar JSONP para evitar problemas de CORS
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(datos)
+                });
+
+
+                // Como no-cors no devuelve respuesta legible, asumimos éxito
+                // En la práctica, el script de Google se ejecutará
+                
+                agregarAlHistorial(fechaHora, codigoBarra, true, esAutomatico);
+                
+                if (esAutomatico) {
+                    mostrarUltimoEscaneo(fechaHora, codigoBarra, '✅ Enviado automáticamente');
+                    mostrarEstado('✅ Código enviado: ' + codigoBarra, 'success');
+                }
+                
+                return true;
+
+
+            } catch (error) {
+                console.error('Error:', error);
+                agregarAlHistorial(fechaHora, codigoBarra, false, esAutomatico);
+                
+                if (esAutomatico) {
+                    mostrarEstado('❌ Error al enviar: ' + error.message, 'error');
+                }
+                
+                return false;
+            }
+        }
+
+
+        // ==========================================
+        // ESCANER DE CÓDIGOS DE BARRAS
+        // ==========================================
+        function iniciarEscanner() {
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+
+            html5QrCode = new Html5Qrcode("reader");
+
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Error al iniciar cámara:", err);
+                mostrarEstado('❌ Error de cámara: ' + err, 'error');
+            });
+        }
+
+
+        function onScanSuccess(decodedText, decodedResult) {
+            const ahora = Date.now();
+            
+            // Evitar envíos duplicados del mismo código
+            if (decodedText === ultimoCodigo && (ahora - ultimoEnvio) < DELAY_ENTRE_ESCANEOS) {
+                return;
+            }
+
+
+            ultimoCodigo = decodedText;
+            ultimoEnvio = ahora;
+
+
+            const fechaHora = actualizarFechaHora();
+            
+            // Enviar automáticamente sin botón
+            enviarAGoogleSheets(fechaHora, decodedText, true);
+            
+            // Sonido de confirmación (opcional)
+            playBeep();
+        }
+
+
+        function onScanFailure(error) {
+            // No mostrar errores de escaneo constantes (es normal cuando no hay código)
+            // console.warn(`Código escaneo error: ${error}`);
+        }
+
+
+        // ==========================================
+        // ENTRADA MANUAL
+        // ==========================================
+        function enviarManual() {
+            const codigo = document.getElementById('manualCodigo').value.trim();
+            
+            if (!codigo) {
+                alert('Por favor ingresa el código de barras');
+                return;
+            }
+
+
+            const fechaHora = document.getElementById('manualFecha').value;
+            const btn = document.getElementById('btnManual');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Enviando...';
+            
+            enviarAGoogleSheets(fechaHora, codigo, false).then(exito => {
+                btn.disabled = false;
+                btn.innerHTML = '<span>📤</span> Enviar a Google Sheets';
+                
+                if (exito) {
+                    document.getElementById('manualCodigo').value = '';
+                    document.getElementById('manualCodigo').focus();
+                    alert('✅ Enviado correctamente a Google Sheets');
+                } else {
+                    alert('❌ Error al enviar. Verifica la conexión.');
+                }
+            });
+        }
+
+
+        // Permitir enviar con Enter en el campo de código
+        document.getElementById('manualCodigo').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                enviarManual();
+            }
+        });
+
+
+        // ==========================================
+        // UI Y UTILIDADES
+        // ==========================================
+        function mostrarEstado(mensaje, tipo) {
+            const status = document.getElementById('status');
+            status.textContent = mensaje;
+            status.className = 'status ' + tipo;
+            
+            if (tipo === 'success') {
+                setTimeout(() => {
+                    status.className = 'status scanning';
+                    status.textContent = '📷 Escaneando... Apunta al código de barras';
+                }, 3000);
+            }
+        }
+
+
+        function mostrarUltimoEscaneo(fecha, codigo, estado) {
+            document.getElementById('lastScan').classList.remove('hidden');
+            document.getElementById('lastFecha').textContent = fecha;
+            document.getElementById('lastCodigo').textContent = codigo;
+            document.getElementById('lastEstado').textContent = estado;
+        }
+
+
+        function agregarAlHistorial(fecha, codigo, exito, esAuto) {
+            const historyList = document.getElementById('historyList');
+            const item = document.createElement('div');
+            item.className = 'history-item ' + (exito ? 'success' : '');
+            
+            const hora = fecha.split(',')[1] || fecha;
+            const tipo = esAuto ? '🤖' : '✏️';
+            
+            item.innerHTML = `
+                <div>
+                    <strong>${tipo} ${codigo}</strong>
+                    <div style="font-size: 0.75rem; color: #666;">${hora}</div>
+                </div>
+                <span style="color: ${exito ? '#4caf50' : '#f44336'}; font-size: 1.2rem;">
+                    ${exito ? '✓' : '✗'}
+                </span>
+            `;
+            
+            historyList.insertBefore(item, historyList.firstChild);
+            
+            // Mantener solo los últimos 10
+            while (historyList.children.length > 10) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+
+
+        function playBeep() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Silenciar errores de audio
+            }
+        }
+
+
+        // Pausar escaneo cuando la pestaña no está visible
+        document.addEventListener('visibilitychange', () => {
+            if (html5QrCode) {
+                if (document.hidden) {
+                    html5QrCode.pause();
+                } else {
+                    html5QrCode.resume();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
