@@ -333,13 +333,6 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
-
-        /* Separador visual */
-        .controls-separator {
-            width: 2px;
-            background: #ddd;
-            margin: 0 5px;
-        }
     </style>
 </head>
 <body>
@@ -363,7 +356,7 @@
         <!-- DOS BOTONES EN FILA -->
         <div class="controls">
             <button id="btnStop" class="btn-stop" onclick="detenerCamara()">
-                ⏹️ DETENER Y ENVIAR
+                ⏹️ DETENER
             </button>
             <button id="btnStart" class="btn-start" onclick="iniciarNuevoEscaneo()" disabled>
                 ▶️ INICIO
@@ -538,6 +531,7 @@
             document.getElementById('contador').textContent = historial.length;
         }
 
+        // FUNCIÓN DETENER - SOLO DETIENE LA CÁMARA (SIN ENVIAR)
         function detenerCamara() {
             if (!escaneando) return;
             
@@ -546,11 +540,11 @@
             // Detener cámara
             html5QrCode.stop().then(() => {
                 actualizarEstadoUI(false);
-                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⏸️ DETENIDO - Enviando historial...';
-                document.getElementById('status').className = 'status enviando';
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⏸️ CÁMARA DETENIDA';
+                document.getElementById('status').className = 'status pausado';
                 
-                // Enviar todo el historial
-                enviarTodoElHistorial();
+                // NOTA: Ya no se envía el historial aquí
+                // El historial permanece guardado hasta que se presione INICIO
             }).catch(err => {
                 console.error("Error al detener:", err);
             });
@@ -622,57 +616,6 @@
                 console.log('Enviado automáticamente:', registro.codigo);
             }).catch(err => {
                 console.error('Error en envío automático:', err);
-            });
-        }
-
-        function enviarTodoElHistorial() {
-            const url = document.getElementById('scriptUrl').value;
-            
-            if (!url) {
-                alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
-                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⚠️ CONFIGURA LA URL PRIMERO';
-                document.getElementById('status').className = 'status pausado';
-                // Habilitar botón de inicio aunque haya error
-                actualizarEstadoUI(false);
-                return;
-            }
-
-            const sheetName = document.getElementById('sheetName').value || 'DIA';
-
-            if (historial.length === 0) {
-                // Si no hay historial, solo cambiar estado
-                actualizarEstadoUI(false);
-                return;
-            }
-
-            // Preparar datos para envío masivo
-            const data = {
-                hoja: sheetName,
-                modo: 'masivo',
-                registros: historial
-            };
-
-            document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> 📤 ENVIANDO ' + historial.length + ' REGISTROS...';
-
-            fetch(url, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            }).then(() => {
-                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ✅ ENVIADOS ' + historial.length + ' REGISTROS';
-                document.getElementById('status').className = 'status pausado';
-                
-                // Habilitar botón de inicio después de enviar
-                actualizarEstadoUI(false);
-            }).catch(err => {
-                console.error('Error:', err);
-                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ❌ ERROR AL ENVIAR';
-                document.getElementById('status').className = 'status error-msg';
-                // Aún así habilitar botón de inicio para reintentar
-                actualizarEstadoUI(false);
             });
         }
 
