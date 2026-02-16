@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escáner Natura - Google Sheets</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .status.escaneando {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status.pausado {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .status.error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status.laser-activo {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 2px solid #90caf9;
+        }
+
+        .estado-indicador {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .estado-indicador.activo {
+            background: #28a745;
+        }
+
+        .estado-indicador.pausado {
+            background: #ffc107;
+            animation: none;
+        }
+
+        .estado-indicador.laser {
+            background: #2196f3;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .last-scanned {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .last-scanned.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 3px solid #e2e8f0;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: #c82333;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #218838;
+        }
+
+        .btn-laser {
+            background: #2196f3;
+            color: white;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-laser::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-laser:hover::before {
+            left: 100%;
+        }
+
+        .btn-laser.activo {
+            background: #ff5722;
+            box-shadow: 0 0 15px rgba(255, 87, 34, 0.5);
+        }
+
+        .btn-laser.activo::after {
+            content: '●';
+            color: #ffeb3b;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .btn-manual {
+            background: #6c757d;
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-manual:hover {
+            background: #5a6268;
+        }
+
+        .contador {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section h3 {
+            margin-bottom: 15px;
+            color: #2d3748;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .historial {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .item-historial {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .item-historial:hover {
+            background: #f8f9fa;
+        }
+
+        .item-historial:last-child {
+            border-bottom: none;
+        }
+
+        .codigo {
+            font-weight: 600;
+            color: #2d3748;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+        }
+
+        .fecha {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-send {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-send:hover {
+            background: #5568d3;
+        }
+
+        .btn-activar-excel {
+            background: #10b981;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            border-radius: 20px;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        .success-msg, .error-msg {
+            display: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Toggle Switch Estilo iOS */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: #ccc;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(22px);
+        }
+
+        .config-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .config-content.visible {
+            max-height: 500px;
+        }
+
+        .laser-input-container {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border: 2px solid #2196f3;
+        }
+
+        .laser-input-container.active {
+            display: block;
+        }
+
+        .laser-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            background: white;
+        }
+
+        .laser-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+        }
+
+        .laser-status {
+            text-align: center;
+            color: #1976d2;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .hidden-url {
+            display: none;
+        }
+
+        .url-display {
+            word-break: break-all;
+            font-size: 0.8rem;
+            color: #667eea;
+            background: #f0f4ff;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Escáner Natura</h1>
+        <p class="subtitle">Escaneo automático a Google Sheets</p>
+
+        <div id="status" class="status escaneando">
+            <span class="estado-indicador activo"></span>
+            ESCANEANDO - Listo para capturar códigos
+        </div>
+
+        <div id="lastScanned" class="last-scanned">
+            <div>Último código detectado:</div>
+            <div id="lastCode" style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;"></div>
+            <div id="lastTime" style="font-size: 0.9rem; opacity: 0.9;"></div>
+        </div>
+
+        <div id="reader"></div>
+
+        <!-- Botón de Escáner Láser -->
+        <button id="btnLaser" class="btn-laser" onclick="toggleLaserMode()">
+            <span>🔫</span>
+            <span id="laserText">ACTIVAR LÁSER INALÁMBRICO</span>
+        </button>
+
+        <!-- Input oculto para recibir datos del escáner láser -->
+        <div id="laserInputContainer" class="laser-input-container">
+            <div class="laser-status">
+                <span class="estado-indicador laser"></span>
+                LÁSER ACTIVO - Escanee un código
+            </div>
+            <input 
+                type="text" 
+                id="laserInput" 
+                class="laser-input" 
+                placeholder="Esperando código..." 
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                readonly
+            >
+        </div>
+
+        <!-- Controles de Cámara -->
+        <div class="controls">
+            <button id="btnStop" class="btn-stop" onclick="detenerCamara()">
+                ⏹️ DETENER
+            </button>
+            <button id="btnStart" class="btn-start" onclick="iniciarNuevoEscaneo()" disabled>
+                ▶️ INICIO
+            </button>
+        </div>
+
+        <button class="btn-manual" onclick="toggleManual()">
+            ✏️ ENTRADA MANUAL
+        </button>
+
+        <div class="contador">
+            <span id="contador">0</span> códigos en historial
+        </div>
+
+        <!-- Sección de Historial -->
+        <div class="section">
+            <h3>📋 Historial Temporal</h3>
+            <div id="historial" class="historial">
+                <p style="text-align: center; color: #999; padding: 20px;">
+                    Los códigos escaneados aparecerán aquí...
+                </p>
+            </div>
+        </div>
+
+        <!-- Entrada Manual -->
+        <div id="manualSection" class="section" style="display: none;">
+            <h3>✏️ Entrada Manual</h3>
+            <div class="input-group">
+                <label>Código de Barras (o múltiples separados por coma):</label>
+                <input type="text" id="manualInput" placeholder="Ej: 123456789, 987654321, 456789123">
+            </div>
+            <button class="btn-send" onclick="enviarManual()">
+                📤 ENVIAR A GOOGLE SHEETS
+            </button>
+            <div id="manualSuccess" class="success-msg">✅ Enviado correctamente</div>
+            <div id="manualError" class="error-msg">❌ Error al enviar</div>
+        </div>
+
+        <!-- Configuración Google Sheets con Toggle -->
+        <div class="section config-section">
+            <h3>⚙️ Configuración Google Sheets</h3>
+            
+            <!-- Toggle Switch -->
+            <div class="toggle-container" onclick="toggleConfig()">
+                <span class="toggle-label">Mostrar configuración</span>
+                <div class="toggle-switch" id="configToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+
+            <!-- Contenido colapsable -->
+            <div id="configContent" class="config-content">
+                <div class="input-group">
+                    <label style="display: flex; align-items: center; flex-wrap: wrap;">
+                        URL del Script de Google Apps:
+                        <button class="btn-activar-excel" onclick="event.stopPropagation(); toggleExcelUrl()">
+                            📊 Activar Excel
+                        </button>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="scriptUrl" 
+                        class="hidden-url"
+                        placeholder="https://script.google.com/macros/s/.../exec"
+                        readonly
+                    >
+                    <div id="urlDisplay" class="url-display" style="display: none;">
+                        https://script.google.com/macros/s/AKfycbwkyOls_YxKxEJiHjMd0Q30NVXdiCDo74GGdy2ISwf6FvHxjvXuNTnc9b3fB6Dl5JlY/exec
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Nombre de la Hoja (DIA):</label>
+                    <input type="text" id="sheetName" value="DIA">
+                </div>
+                <button class="btn-send" onclick="probarConexion()">
+                    🔌 PROBAR CONEXIÓN
+                </button>
+                <div id="configSuccess" class="success-msg">✅ Conexión exitosa</div>
+                <div id="configError" class="error-msg">❌ Error de conexión</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let html5QrCode;
+        let historial = [];
+        let escaneando = true;
+        let laserMode = false;
+        let ultimoCodigo = '';
+        let ultimoTiempo = 0;
+        const DELAY_ENTRE_ESCANEOS = 2000;
+
+        // Inicializar escáner al cargar
+        window.onload = function() {
+            iniciarEscanner();
+            
+            // Prevenir zoom en inputs en iOS
+            document.addEventListener('gesturestart', function (e) {
+                e.preventDefault();
+            });
+        };
+
+        function iniciarEscanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Error al iniciar cámara:", err);
+                actualizarEstadoUI(false);
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ❌ Error al acceder a la cámara';
+                document.getElementById('status').className = 'status error-msg';
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (laserMode) return; // Ignorar si está en modo láser
+
+            const ahora = Date.now();
+            
+            if (decodedText === ultimoCodigo && (ahora - ultimoTiempo) < DELAY_ENTRE_ESCANEOS) {
+                return;
+            }
+
+            ultimoCodigo = decodedText;
+            ultimoTiempo = ahora;
+
+            procesarCodigo(decodedText, 'cámara');
+        }
+
+        function onScanFailure(error) {
+            // Ignorar errores de escaneo
+        }
+
+        function procesarCodigo(codigo, fuente) {
+            const fecha = new Date();
+            const registro = {
+                fecha: fecha.toLocaleDateString('es-ES'),
+                hora: fecha.toLocaleTimeString('es-ES'),
+                codigo: codigo,
+                timestamp: fecha.getTime(),
+                fuente: fuente
+            };
+
+            historial.push(registro);
+            
+            mostrarUltimoEscaneado(codigo, registro.fecha + ' ' + registro.hora, fuente);
+            actualizarHistorial();
+            actualizarContador();
+
+            // Enviar inmediatamente a Google Sheets
+            enviarAutomatico(registro);
+        }
+
+        function mostrarUltimoEscaneado(codigo, fechaHora, fuente) {
+            const div = document.getElementById('lastScanned');
+            const fuenteTexto = fuente === 'láser' ? ' (Láser)' : ' (Cámara)';
+            document.getElementById('lastCode').textContent = codigo + fuenteTexto;
+            document.getElementById('lastTime').textContent = fechaHora;
+            div.classList.add('show');
+            
+            setTimeout(() => {
+                div.classList.remove('show');
+            }, 3000);
+        }
+
+        function actualizarHistorial() {
+            const container = document.getElementById('historial');
+            
+            if (historial.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Los códigos escaneados aparecerán aquí...</p>';
+                return;
+            }
+
+            let html = '';
+            for (let i = historial.length - 1; i >= 0; i--) {
+                const item = historial[i];
+                const icono = item.fuente === 'láser' ? '🔫' : '📷';
+                html += `
+                    <div class="item-historial">
+                        <div>
+                            <div class="codigo">${icono} ${item.codigo}</div>
+                            <div class="fecha">${item.fecha} ${item.hora}</div>
+                        </div>
+                        <span style="color: #28a745; font-size: 1.2rem;">✓</span>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function actualizarContador() {
+            document.getElementById('contador').textContent = historial.length;
+        }
+
+        // MODO LÁSER INALÁMBRICO
+        function toggleLaserMode() {
+            laserMode = !laserMode;
+            const btn = document.getElementById('btnLaser');
+            const laserContainer = document.getElementById('laserInputContainer');
+            const laserInput = document.getElementById('laserInput');
+            const status = document.getElementById('status');
+
+            if (laserMode) {
+                // Activar modo láser
+                btn.classList.add('activo');
+                document.getElementById('laserText').textContent = 'DESACTIVAR LÁSER';
+                laserContainer.classList.add('active');
+                status.innerHTML = '<span class="estado-indicador laser"></span> MODO LÁSER ACTIVO - Escanee con dispositivo inalámbrico';
+                status.className = 'status laser-activo';
+                
+                // Detener cámara
+                if (escaneando) {
+                    html5QrCode.stop().then(() => {
+                        escaneando = false;
+                        actualizarEstadoUI(false);
+                    });
+                }
+
+                // Enfocar input para recibir datos del escáner láser
+                setTimeout(() => {
+                    laserInput.focus();
+                    laserInput.click();
+                }, 100);
+
+                // Manejar entrada del láser
+                laserInput.addEventListener('keypress', handleLaserInput);
+                laserInput.addEventListener('input', handleLaserInput);
+                
+            } else {
+                // Desactivar modo láser
+                btn.classList.remove('activo');
+                document.getElementById('laserText').textContent = 'ACTIVAR LÁSER INALÁMBRICO';
+                laserContainer.classList.remove('active');
+                
+                // Reiniciar cámara
+                iniciarNuevoEscaneo();
+                
+                laserInput.removeEventListener('keypress', handleLaserInput);
+                laserInput.removeEventListener('input', handleLaserInput);
+            }
+        }
+
+        function handleLaserInput(e) {
+            if (e.key === 'Enter' || e.inputType === 'insertLineBreak') {
+                e.preventDefault();
+                const codigo = e.target.value.trim();
+                if (codigo) {
+                    procesarCodigo(codigo, 'láser');
+                    e.target.value = '';
+                    e.target.focus();
+                }
+            }
+        }
+
+        // También detectar cuando el escáner láser envía datos (simulando Enter)
+        document.getElementById('laserInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                const codigo = this.value.trim();
+                if (codigo) {
+                    procesarCodigo(codigo, 'láser');
+                    this.value = '';
+                    this.focus();
+                }
+            }
+        });
+
+        function detenerCamara() {
+            if (!escaneando || laserMode) return;
+            
+            escaneando = false;
+            
+            html5QrCode.stop().then(() => {
+                actualizarEstadoUI(false);
+                document.getElementById('status').innerHTML = '<span class="estado-indicador pausado"></span> ⏸️ CÁMARA DETENIDA';
+                document.getElementById('status').className = 'status pausado';
+            }).catch(err => {
+                console.error("Error al detener:", err);
+            });
+        }
+
+        function iniciarNuevoEscaneo() {
+            if (laserMode) {
+                toggleLaserMode(); // Desactivar láser si está activo
+                return;
+            }
+
+            historial = [];
+            actualizarHistorial();
+            actualizarContador();
+            
+            ultimoCodigo = '';
+            ultimoTiempo = 0;
+            
+            escaneando = true;
+            actualizarEstadoUI(true);
+            
+            iniciarEscanner();
+        }
+
+        function actualizarEstadoUI(activo) {
+            const btnStop = document.getElementById('btnStop');
+            const btnStart = document.getElementById('btnStart');
+            const status = document.getElementById('status');
+            
+            if (activo) {
+                btnStop.disabled = false;
+                btnStart.disabled = true;
+                status.innerHTML = '<span class="estado-indicador activo"></span> ESCANEANDO - Listo para capturar códigos';
+                status.className = 'status escaneando';
+            } else {
+                btnStop.disabled = true;
+                btnStart.disabled = false;
+                status.innerHTML = '<span class="estado-indicador pausado"></span> PAUSADO - Listo para nuevo escaneo';
+                status.className = 'status pausado';
+            }
+        }
+
+        // TOGGLE CONFIGURACIÓN
+        function toggleConfig() {
+            const toggle = document.getElementById('configToggle');
+            const content = document.getElementById('configContent');
+            
+            toggle.classList.toggle('active');
+            content.classList.toggle('visible');
+        }
+
+        // TOGGLE EXCEL URL
+        function toggleExcelUrl() {
+            const input = document.getElementById('scriptUrl');
+            const display = document.getElementById('urlDisplay');
+            
+            if (input.classList.contains('hidden-url')) {
+                input.classList.remove('hidden-url');
+                input.style.display = 'block';
+                display.style.display = 'none';
+                input.readOnly = false;
+                input.focus();
+            } else {
+                input.classList.add('hidden-url');
+                input.style.display = 'none';
+                display.style.display = 'block';
+                input.readOnly = true;
+            }
+        }
+
+        function enviarAutomatico(registro) {
+            const url = document.getElementById('scriptUrl').value;
+            if (!url) {
+                console.log('No hay URL configurada - modo demo');
+                return;
+            }
+
+            const sheetName = document.getElementById('sheetName').value || 'DIA';
+            
+            const data = {
+                hoja: sheetName,
+                fecha: registro.fecha,
+                hora: registro.hora,
+                codigo: registro.codigo,
+                modo: 'automatico',
+                fuente: registro.fuente || 'cámara'
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(() => {
+                console.log('Enviado automáticamente:', registro.codigo);
+            }).catch(err => {
+                console.error('Error en envío automático:', err);
+            });
+        }
+
+        function toggleManual() {
+            const section = document.getElementById('manualSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function enviarManual() {
+            const input = document.getElementById('manualInput').value.trim();
+            const url = document.getElementById('scriptUrl').value;
+            
+            if (!input) {
+                alert('Por favor ingresa al menos un código');
+                return;
+            }
+
+            if (!url) {
+                alert('⚠️ Por favor configura la URL del Script de Google Apps primero');
+                return;
+            }
+
+            const sheetName = document.getElementById('sheetName').value || 'DIA';
+            
+            const codigos = input.split(',').map(c => c.trim()).filter(c => c);
+            
+            const fecha = new Date();
+            const registros = codigos.map(codigo => ({
+                fecha: fecha.toLocaleDateString('es-ES'),
+                hora: fecha.toLocaleTimeString('es-ES'),
+                codigo: codigo,
+                fuente: 'manual'
+            }));
+
+            const data = {
+                hoja: sheetName,
+                modo: 'masivo',
+                registros: registros
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(() => {
+                document.getElementById('manualSuccess').style.display = 'block';
+                document.getElementById('manualInput').value = '';
+                setTimeout(() => {
+                    document.getElementById('manualSuccess').style.display = 'none';
+                }, 3000);
+            }).catch(err => {
+                document.getElementById('manualError').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('manualError').style.display = 'none';
+                }, 3000);
+            });
+        }
+
+        function probarConexion() {
+            const url = document.getElementById('scriptUrl').value;
+            
+            if (!url) {
+                alert('Por favor ingresa la URL del script');
+                return;
+            }
+
+            document.getElementById('configSuccess').style.display = 'none';
+            document.getElementById('configError').style.display = 'none';
+
+            fetch(url + '?test=1', {
+                method: 'GET',
+                mode: 'no-cors'
+            }).then(() => {
+                document.getElementById('configSuccess').style.display = 'block';
+            }).catch(() => {
+                document.getElementById('configSuccess').style.display = 'block';
+            });
+        }
+
+        // Prevenir que el teclado virtual aparezca al hacer toggle
+        document.getElementById('configToggle').addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            toggleConfig();
+        });
+    </script>
+</body>
+</html>
