@@ -373,13 +373,6 @@
 
         .hidden { display: none !important; }
 
-        /* Estilo para input con URL automática */
-        .url-auto {
-            background: #e8f5e9 !important;
-            border-color: #4caf50 !important;
-            color: #2e7d32 !important;
-        }
-
         @media (max-width: 480px) {
             body { padding: 10px; }
             .container { padding: 15px; }
@@ -484,8 +477,8 @@
             
             <div id="configContent" class="config-content">
                 <div class="input-group">
-                    <label>URL del Script: <span id="urlStatus" style="color: #4caf50; font-size: 0.8rem; display: none;">✓ Auto-configurada</span></label>
-                    <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." readonly>
+                    <label>URL del Script:</label>
+                    <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbwkyOls_YxKxEJiHjMd0Q30NVXdiCDo74GGdy2ISwf6FvHxjvXuNTnc9b3fB6Dl5JlY/exec">
                 </div>
                 <div class="input-group">
                     <label>Nombre de Hoja:</label>
@@ -501,78 +494,26 @@
     </div>
 
     <script>
-        // ============================================
-        // URL OFUSCADA - COPIA TU URL CODIFICADA AQUÍ
-        // ============================================
-        // Para generar: En consola del navegador ejecuta: btoa("https://script.google.com/macros/s/AKfycbwkyOls_YxKxEJiHjMd0Q30NVXdiCDo74GGdy2ISwf6FvHxjvXuNTnc9b3fB6Dl5JlY/exec")
-        // Ejemplo: btoa("https://script.google.com/macros/s/AKfyc.../exec")
-        const URL_CODIFICADA = "https://script.google.com/macros/s/AKfycbwkyOls_YxKxEJiHjMd0Q30NVXdiCDo74GGdy2ISwf6FvHxjvXuNTnc9b3fB6Dl5JlY/exec";
-        
-        // ============================================
-        // VARIABLES GLOBALES
-        // ============================================
+        // Variables globales
         let html5QrCode;
         let historial = [];
         let escaneando = true;
         let laserMode = false;
         let ultimoCodigo = '';
         let ultimoTiempo = 0;
-        const DELAY_ENTRE_ESCANEOS = 1500;
+        const DELAY_ENTRE_ESCANEOS = 1500; // Reducido para láser rápido
 
-        // ============================================
-        // INICIALIZACIÓN AUTOMÁTICA
-        // ============================================
+        // Inicializar
         window.onload = function() {
-            // 1. Configurar URL automáticamente al cargar
-            configurarURLAutomatica();
-            
-            // 2. Iniciar escáner
             iniciarEscanner();
             
-            // 3. Prevenir zoom en iOS
+            // Prevenir zoom en iOS
             document.addEventListener('gesturestart', e => e.preventDefault());
             
-            // 4. Configurar input láser
+            // Configurar input láser para recibir datos del Honeywell
             setupLaserInput();
         };
 
-        // ============================================
-        // FUNCIÓN: CONFIGURAR URL AUTOMÁTICAMENTE
-        // ============================================
-        function configurarURLAutomatica() {
-            try {
-                // Decodificar URL de Base64
-                const urlReal = atob(URL_CODIFICADA);
-                
-                // Insertar en el input (oculto visualmente pero funcional)
-                const inputUrl = document.getElementById('scriptUrl');
-                inputUrl.value = urlReal;
-                inputUrl.classList.add('url-auto');
-                
-                // Mostrar indicador de éxito
-                document.getElementById('urlStatus').style.display = 'inline';
-                
-                console.log('✅ URL configurada automáticamente');
-                
-                // Opcional: Copiar al portapapeles (puede requerir interacción del usuario en algunos navegadores)
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(urlReal).then(() => {
-                        console.log('📋 URL copiada al portapapeles');
-                    }).catch(err => {
-                        // Error silencioso - no es crítico
-                        console.log('No se pudo copiar automáticamente:', err);
-                    });
-                }
-                
-            } catch (error) {
-                console.error('❌ Error al decodificar URL:', error);
-                alert('Error al cargar la configuración. Contacte al administrador.');
-            }
-        }
-
-        // ============================================
-        // RESTO DE FUNCIONES (sin cambios)
-        // ============================================
         function iniciarEscanner() {
             const reader = document.getElementById('reader');
             reader.classList.add('active');
@@ -612,9 +553,11 @@
             // Ignorar errores normales de escaneo
         }
 
+        // CONFIGURACIÓN ESPECIAL PARA HONEYWELL 3820i
         function setupLaserInput() {
             const laserInput = document.getElementById('laserInput');
             
+            // El Honeywell envía datos como un teclado, terminando con Enter
             laserInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -622,11 +565,13 @@
                     if (codigo) {
                         procesarCodigo(codigo, 'láser');
                         this.value = '';
+                        // Mantener foco para siguiente escaneo
                         setTimeout(() => this.focus(), 50);
                     }
                 }
             });
 
+            // Backup por si el keypress falla
             laserInput.addEventListener('keyup', function(e) {
                 if (e.key === 'Enter') {
                     const codigo = this.value.trim();
@@ -638,16 +583,20 @@
                 }
             });
 
+            // Detectar input rápido (característica de escáneres láser)
             let lastInputTime = 0;
             laserInput.addEventListener('input', function(e) {
                 const now = Date.now();
                 const diff = now - lastInputTime;
                 lastInputTime = now;
                 
+                // Si el input es muy rápido (< 50ms entre caracteres), es probablemente el láser
                 if (diff < 50 && this.value.length > 5) {
+                    // Verificar si termina con Enter implícito
                     setTimeout(() => {
                         const codigo = this.value.trim();
                         if (codigo && !codigo.includes('\n')) {
+                            // Auto-procesar si parece un código completo
                             if (codigo.length > 8) {
                                 procesarCodigo(codigo, 'láser');
                                 this.value = '';
@@ -668,6 +617,7 @@
             const cameraControls = document.getElementById('cameraControls');
 
             if (laserMode) {
+                // Activar modo láser
                 btn.classList.add('activo');
                 document.getElementById('laserText').textContent = 'DESACTIVAR LÁSER';
                 laserContainer.classList.add('active');
@@ -676,24 +626,29 @@
                 
                 actualizarEstado("MODO LÁSER ACTIVO - Honeywell listo", "laser");
                 
+                // Detener cámara
                 if (escaneando && html5QrCode) {
                     html5QrCode.stop().then(() => {
                         escaneando = false;
                     }).catch(() => {});
                 }
 
+                // Enfocar input para recibir datos del Honeywell
                 setTimeout(() => {
                     laserInput.focus();
+                    // En móviles, intentar abrir teclado virtual
                     laserInput.click();
                 }, 300);
 
             } else {
+                // Desactivar modo láser
                 btn.classList.remove('activo');
                 document.getElementById('laserText').textContent = 'MODO LÁSER HONEYWELL';
                 laserContainer.classList.remove('active');
                 reader.classList.add('active');
                 cameraControls.style.display = 'grid';
                 
+                // Reiniciar cámara
                 iniciarNuevoEscaneo();
             }
         }
@@ -714,8 +669,10 @@
             actualizarHistorial();
             actualizarContador();
 
+            // Enviar a Google Sheets
             enviarAutomatico(registro);
             
+            // Feedback visual
             if (fuente === 'láser') {
                 const input = document.getElementById('laserInput');
                 input.style.background = '#c8e6c9';
