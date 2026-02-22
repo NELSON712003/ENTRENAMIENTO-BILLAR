@@ -373,6 +373,129 @@
 
         .hidden { display: none !important; }
 
+        /* NUEVOS ESTILOS PARA HISTORIAL TEMPORAL */
+        .historial-temporal {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .historial-temporal h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .item-temporal {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #ff9800;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .item-temporal .info {
+            flex: 1;
+        }
+
+        .item-temporal .codigo-temp {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #e65100;
+            font-size: 1.1rem;
+        }
+
+        .item-temporal .tiempo-temp {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .estado-envio {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .estado-envio.pendiente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .estado-envio.enviando {
+            background: #cce5ff;
+            color: #004085;
+            animation: pulse 1s infinite;
+        }
+
+        .estado-envio.exito {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .estado-envio.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-sync {
+            background: #ff9800;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-sync:hover { background: #f57c00; }
+
+        .stats-temporal {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #ffcc80;
+        }
+
+        .stat-box .numero {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e65100;
+        }
+
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
         @media (max-width: 480px) {
             body { padding: 10px; }
             .container { padding: 15px; }
@@ -424,6 +547,34 @@
             <div class="laser-hint">
                 💡 El escáner Honeywell enviará el código automáticamente al apretar el gatillo
             </div>
+
+            <!-- NUEVO: Historial Temporal del Modo Láser -->
+            <div class="historial-temporal" id="historialTemporalContainer" style="display: none;">
+                <h4>📊 Historial Temporal - Modo Láser</h4>
+                
+                <div class="stats-temporal">
+                    <div class="stat-box">
+                        <div class="numero" id="statTotal">0</div>
+                        <div class="label">Total</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="numero" id="statEnviados">0</div>
+                        <div class="label">Enviados</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="numero" id="statPendientes">0</div>
+                        <div class="label">Pendientes</div>
+                    </div>
+                </div>
+
+                <div id="listaTemporal" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Los items se agregan aquí dinámicamente -->
+                </div>
+
+                <button class="btn-sync" onclick="sincronizarPendientes()">
+                    🔄 Sincronizar Pendientes
+                </button>
+            </div>
         </div>
 
         <!-- Controles de Cámara -->
@@ -444,9 +595,9 @@
             <span id="contador">0</span> códigos registrados
         </div>
 
-        <!-- Historial -->
+        <!-- Historial General -->
         <div class="section">
-            <h3>📋 Historial</h3>
+            <h3>📋 Historial General</h3>
             <div id="historial" class="historial">
                 <p style="text-align: center; color: #999; padding: 20px;">
                     Los códigos escaneados aparecerán aquí...
@@ -501,7 +652,11 @@
         let laserMode = false;
         let ultimoCodigo = '';
         let ultimoTiempo = 0;
-        const DELAY_ENTRE_ESCANEOS = 1500; // Reducido para láser rápido
+        const DELAY_ENTRE_ESCANEOS = 1500;
+
+        // NUEVO: Historial temporal para modo láser
+        let historialTemporal = [];
+        let idContador = 0;
 
         // Inicializar
         window.onload = function() {
@@ -510,8 +665,11 @@
             // Prevenir zoom en iOS
             document.addEventListener('gesturestart', e => e.preventDefault());
             
-            // Configurar input láser para recibir datos del Honeywell
+            // Configurar input láser
             setupLaserInput();
+            
+            // Cargar historial temporal guardado (si existe)
+            cargarHistorialTemporal();
         };
 
         function iniciarEscanner() {
@@ -563,9 +721,8 @@
                     e.preventDefault();
                     const codigo = this.value.trim();
                     if (codigo) {
-                        procesarCodigo(codigo, 'láser');
+                        procesarCodigoLaser(codigo);
                         this.value = '';
-                        // Mantener foco para siguiente escaneo
                         setTimeout(() => this.focus(), 50);
                     }
                 }
@@ -576,7 +733,7 @@
                 if (e.key === 'Enter') {
                     const codigo = this.value.trim();
                     if (codigo) {
-                        procesarCodigo(codigo, 'láser');
+                        procesarCodigoLaser(codigo);
                         this.value = '';
                         setTimeout(() => this.focus(), 50);
                     }
@@ -590,15 +747,12 @@
                 const diff = now - lastInputTime;
                 lastInputTime = now;
                 
-                // Si el input es muy rápido (< 50ms entre caracteres), es probablemente el láser
                 if (diff < 50 && this.value.length > 5) {
-                    // Verificar si termina con Enter implícito
                     setTimeout(() => {
                         const codigo = this.value.trim();
                         if (codigo && !codigo.includes('\n')) {
-                            // Auto-procesar si parece un código completo
                             if (codigo.length > 8) {
-                                procesarCodigo(codigo, 'láser');
+                                procesarCodigoLaser(codigo);
                                 this.value = '';
                                 setTimeout(() => this.focus(), 50);
                             }
@@ -608,6 +762,206 @@
             });
         }
 
+        // NUEVA FUNCIÓN: Procesar código del láser con historial temporal
+        function procesarCodigoLaser(codigo) {
+            const fecha = new Date();
+            const registro = {
+                id: ++idContador,
+                fecha: fecha.toLocaleDateString('es-ES'),
+                hora: fecha.toLocaleTimeString('es-ES'),
+                codigo: codigo,
+                timestamp: fecha.getTime(),
+                fuente: 'láser',
+                estado: 'pendiente', // pendiente, enviando, exito, error
+                intentos: 0
+            };
+
+            // Agregar al historial temporal
+            historialTemporal.unshift(registro);
+            
+            // Guardar en localStorage para persistencia
+            guardarHistorialTemporal();
+            
+            // Mostrar en UI
+            mostrarUltimoEscaneado(codigo, registro.fecha + ' ' + registro.hora, 'láser');
+            actualizarHistorialTemporalUI();
+            
+            // Enviar a Google Sheets inmediatamente
+            enviarRegistroLaser(registro);
+            
+            // Feedback visual
+            const input = document.getElementById('laserInput');
+            input.style.background = '#c8e6c9';
+            setTimeout(() => input.style.background = 'white', 300);
+        }
+
+        // NUEVA FUNCIÓN: Enviar registro del láser a Google Sheets
+        function enviarRegistroLaser(registro) {
+            const url = document.getElementById('scriptUrl').value;
+            
+            // Actualizar estado a enviando
+            registro.estado = 'enviando';
+            actualizarItemTemporalUI(registro.id);
+            
+            if (!url) {
+                console.log('Sin URL configurada - guardando como pendiente');
+                registro.estado = 'pendiente';
+                actualizarItemTemporalUI(registro.id);
+                return;
+            }
+
+            const data = {
+                hoja: document.getElementById('sheetName').value || 'DIA',
+                fecha: registro.fecha,
+                hora: registro.hora,
+                codigo: registro.codigo,
+                modo: 'automatico',
+                fuente: registro.fuente,
+                id: registro.id
+            };
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                registro.estado = 'exito';
+                registro.intentos++;
+                actualizarItemTemporalUI(registro.id);
+                guardarHistorialTemporal();
+                console.log('✅ Enviado:', registro.codigo);
+            })
+            .catch(err => {
+                console.error('❌ Error al enviar:', err);
+                registro.estado = 'error';
+                registro.intentos++;
+                actualizarItemTemporalUI(registro.id);
+                guardarHistorialTemporal();
+            });
+        }
+
+        // NUEVA FUNCIÓN: Actualizar UI del historial temporal
+        function actualizarHistorialTemporalUI() {
+            const container = document.getElementById('listaTemporal');
+            const containerPadre = document.getElementById('historialTemporalContainer');
+            
+            if (historialTemporal.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 10px;">Sin registros temporales</p>';
+                actualizarStats();
+                return;
+            }
+
+            containerPadre.style.display = 'block';
+            
+            let html = '';
+            historialTemporal.forEach(item => {
+                html += crearHTMLItemTemporal(item);
+            });
+            container.innerHTML = html;
+            
+            actualizarStats();
+        }
+
+        function crearHTMLItemTemporal(item) {
+            const estados = {
+                'pendiente': { clase: 'pendiente', texto: 'Pendiente' },
+                'enviando': { clase: 'enviando', texto: 'Enviando...' },
+                'exito': { clase: 'exito', texto: '✓ Enviado' },
+                'error': { clase: 'error', texto: '✗ Error' }
+            };
+            
+            const estado = estados[item.estado];
+            
+            return `
+                <div class="item-temporal" id="temp-item-${item.id}">
+                    <div class="info">
+                        <div class="codigo-temp">${escapeHtml(item.codigo)}</div>
+                        <div class="tiempo-temp">${item.fecha} ${item.hora}</div>
+                    </div>
+                    <span class="estado-envio ${estado.clase}" id="estado-${item.id}">
+                        ${estado.texto}
+                    </span>
+                </div>
+            `;
+        }
+
+        function actualizarItemTemporalUI(id) {
+            const item = historialTemporal.find(i => i.id === id);
+            if (!item) return;
+            
+            const estadoEl = document.getElementById(`estado-${id}`);
+            if (estadoEl) {
+                const estados = {
+                    'pendiente': { clase: 'pendiente', texto: 'Pendiente' },
+                    'enviando': { clase: 'enviando', texto: 'Enviando...' },
+                    'exito': { clase: 'exito', texto: '✓ Enviado' },
+                    'error': { clase: 'error', texto: '✗ Error' }
+                };
+                const estado = estados[item.estado];
+                estadoEl.className = `estado-envio ${estado.clase}`;
+                estadoEl.textContent = estado.texto;
+            }
+            actualizarStats();
+        }
+
+        function actualizarStats() {
+            const total = historialTemporal.length;
+            const enviados = historialTemporal.filter(i => i.estado === 'exito').length;
+            const pendientes = historialTemporal.filter(i => i.estado === 'pendiente' || i.estado === 'error').length;
+            
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statEnviados').textContent = enviados;
+            document.getElementById('statPendientes').textContent = pendientes;
+        }
+
+        // NUEVA FUNCIÓN: Sincronizar pendientes
+        function sincronizarPendientes() {
+            const pendientes = historialTemporal.filter(i => i.estado === 'pendiente' || i.estado === 'error');
+            
+            if (pendientes.length === 0) {
+                alert('No hay registros pendientes');
+                return;
+            }
+            
+            pendientes.forEach(item => {
+                enviarRegistroLaser(item);
+            });
+        }
+
+        // NUEVA FUNCIÓN: Persistencia con localStorage
+        function guardarHistorialTemporal() {
+            try {
+                localStorage.setItem('historialTemporalLaser', JSON.stringify(historialTemporal));
+                localStorage.setItem('idContadorLaser', idContador.toString());
+            } catch (e) {
+                console.error('Error guardando historial:', e);
+            }
+        }
+
+        function cargarHistorialTemporal() {
+            try {
+                const guardado = localStorage.getItem('historialTemporalLaser');
+                const idGuardado = localStorage.getItem('idContadorLaser');
+                
+                if (guardado) {
+                    historialTemporal = JSON.parse(guardado);
+                    // Actualizar UI si estamos en modo láser
+                    if (laserMode) {
+                        actualizarHistorialTemporalUI();
+                    }
+                }
+                
+                if (idGuardado) {
+                    idContador = parseInt(idGuardado);
+                }
+            } catch (e) {
+                console.error('Error cargando historial:', e);
+            }
+        }
+
+        // Modificar función toggleLaserMode para mostrar historial
         function toggleLaserMode() {
             laserMode = !laserMode;
             const btn = document.getElementById('btnLaser');
@@ -615,6 +969,7 @@
             const laserInput = document.getElementById('laserInput');
             const reader = document.getElementById('reader');
             const cameraControls = document.getElementById('cameraControls');
+            const historialContainer = document.getElementById('historialTemporalContainer');
 
             if (laserMode) {
                 // Activar modo láser
@@ -623,6 +978,12 @@
                 laserContainer.classList.add('active');
                 reader.classList.remove('active');
                 cameraControls.style.display = 'none';
+                
+                // Mostrar historial temporal si hay datos
+                if (historialTemporal.length > 0) {
+                    historialContainer.style.display = 'block';
+                    actualizarHistorialTemporalUI();
+                }
                 
                 actualizarEstado("MODO LÁSER ACTIVO - Honeywell listo", "laser");
                 
@@ -633,10 +994,9 @@
                     }).catch(() => {});
                 }
 
-                // Enfocar input para recibir datos del Honeywell
+                // Enfocar input
                 setTimeout(() => {
                     laserInput.focus();
-                    // En móviles, intentar abrir teclado virtual
                     laserInput.click();
                 }, 300);
 
@@ -645,6 +1005,7 @@
                 btn.classList.remove('activo');
                 document.getElementById('laserText').textContent = 'MODO LÁSER HONEYWELL';
                 laserContainer.classList.remove('active');
+                historialContainer.style.display = 'none';
                 reader.classList.add('active');
                 cameraControls.style.display = 'grid';
                 
@@ -653,6 +1014,7 @@
             }
         }
 
+        // Mantener funciones originales para cámara
         function procesarCodigo(codigo, fuente) {
             const fecha = new Date();
             const registro = {
@@ -669,14 +1031,9 @@
             actualizarHistorial();
             actualizarContador();
 
-            // Enviar a Google Sheets
-            enviarAutomatico(registro);
-            
-            // Feedback visual
-            if (fuente === 'láser') {
-                const input = document.getElementById('laserInput');
-                input.style.background = '#c8e6c9';
-                setTimeout(() => input.style.background = 'white', 300);
+            // Enviar a Google Sheets (solo si no es láser, el láser tiene su propio flujo)
+            if (fuente !== 'láser') {
+                enviarAutomatico(registro);
             }
         }
 
