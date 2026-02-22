@@ -311,11 +311,23 @@
             background: white;
             color: #1976d2;
             font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         .laser-input:focus {
             outline: none;
             box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Animación de limpieza */
+        .laser-input.limpiando {
+            animation: fadeOutIn 0.3s ease;
+        }
+
+        @keyframes fadeOutIn {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         .laser-status {
@@ -457,18 +469,42 @@
             color: #721c24;
         }
 
+        /* NUEVO: Contenedor de botones 50/50 */
+        .botones-accion {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
         .btn-sync {
             background: #ff9800;
             color: white;
-            width: 100%;
-            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            padding: 12px;
         }
 
         .btn-sync:hover { background: #f57c00; }
+
+        /* NUEVO: Botón borrar (X) */
+        .btn-borrar {
+            background: #dc3545;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0;
+        }
+
+        .btn-borrar:hover { background: #c82333; }
 
         .stats-temporal {
             display: grid;
@@ -500,6 +536,10 @@
             body { padding: 10px; }
             .container { padding: 15px; }
             h1 { font-size: 1.4rem; }
+            
+            .botones-accion {
+                grid-template-columns: 1fr auto;
+            }
         }
     </style>
 </head>
@@ -571,9 +611,15 @@
                     <!-- Los items se agregan aquí dinámicamente -->
                 </div>
 
-                <button class="btn-sync" onclick="sincronizarPendientes()">
-                    🔄 Sincronizar Pendientes
-                </button>
+                <!-- NUEVO: Botones de acción 50/50 -->
+                <div class="botones-accion">
+                    <button class="btn-sync" onclick="sincronizarPendientes()">
+                        🔄 Sincronizar
+                    </button>
+                    <button class="btn-borrar" onclick="borrarHistorialTemporal()" title="Borrar historial temporal">
+                        ✕
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -722,9 +768,9 @@
                     e.preventDefault();
                     const codigo = this.value.trim();
                     if (codigo) {
+                        // NUEVO: Limpiar input inmediatamente con animación
+                        limpiarInputLaser();
                         procesarCodigoLaser(codigo);
-                        this.value = '';
-                        setTimeout(() => this.focus(), 50);
                     }
                 }
             });
@@ -734,9 +780,8 @@
                 if (e.key === 'Enter') {
                     const codigo = this.value.trim();
                     if (codigo) {
+                        limpiarInputLaser();
                         procesarCodigoLaser(codigo);
-                        this.value = '';
-                        setTimeout(() => this.focus(), 50);
                     }
                 }
             });
@@ -753,14 +798,25 @@
                         const codigo = this.value.trim();
                         if (codigo && !codigo.includes('\n')) {
                             if (codigo.length > 8) {
+                                limpiarInputLaser();
                                 procesarCodigoLaser(codigo);
-                                this.value = '';
-                                setTimeout(() => this.focus(), 50);
                             }
                         }
                     }, 100);
                 }
             });
+        }
+
+        // NUEVA FUNCIÓN: Limpiar input del láser con animación
+        function limpiarInputLaser() {
+            const input = document.getElementById('laserInput');
+            input.classList.add('limpiando');
+            input.value = '';
+            
+            setTimeout(() => {
+                input.classList.remove('limpiando');
+                input.focus();
+            }, 300);
         }
 
         // NUEVA FUNCIÓN: Procesar código del láser con historial temporal
@@ -777,7 +833,7 @@
                 intentos: 0
             };
 
-            // Agregar al historial temporal
+            // Agregar al historial temporal (al inicio)
             historialTemporal.unshift(registro);
             
             // Guardar en localStorage para persistencia
@@ -789,11 +845,6 @@
             
             // Enviar a Google Sheets inmediatamente
             enviarRegistroLaser(registro);
-            
-            // Feedback visual
-            const input = document.getElementById('laserInput');
-            input.style.background = '#c8e6c9';
-            setTimeout(() => input.style.background = 'white', 300);
         }
 
         // NUEVA FUNCIÓN: Enviar registro del láser a Google Sheets
@@ -850,6 +901,7 @@
             
             if (historialTemporal.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999; padding: 10px;">Sin registros temporales</p>';
+                containerPadre.style.display = 'block'; // Mostrar aunque esté vacío para acceso a botones
                 actualizarStats();
                 return;
             }
@@ -931,6 +983,28 @@
             });
         }
 
+        // NUEVA FUNCIÓN: Borrar historial temporal
+        function borrarHistorialTemporal() {
+            if (historialTemporal.length === 0) {
+                alert('No hay historial para borrar');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de borrar el historial temporal?\n\nSe eliminarán ${historialTemporal.length} registros.\n\nEsta acción no se puede deshacer.`)) {
+                historialTemporal = [];
+                idContador = 0;
+                guardarHistorialTemporal();
+                actualizarHistorialTemporalUI();
+                
+                // Ocultar contenedor si está vacío
+                if (historialTemporal.length === 0) {
+                    document.getElementById('historialTemporalContainer').style.display = 'none';
+                }
+                
+                console.log('Historial temporal borrado');
+            }
+        }
+
         // NUEVA FUNCIÓN: Persistencia con localStorage
         function guardarHistorialTemporal() {
             try {
@@ -948,10 +1022,6 @@
                 
                 if (guardado) {
                     historialTemporal = JSON.parse(guardado);
-                    // Actualizar UI si estamos en modo láser
-                    if (laserMode) {
-                        actualizarHistorialTemporalUI();
-                    }
                 }
                 
                 if (idGuardado) {
@@ -980,11 +1050,9 @@
                 reader.classList.remove('active');
                 cameraControls.style.display = 'none';
                 
-                // Mostrar historial temporal si hay datos
-                if (historialTemporal.length > 0) {
-                    historialContainer.style.display = 'block';
-                    actualizarHistorialTemporalUI();
-                }
+                // Mostrar historial temporal (siempre visible en modo láser para acceso a botones)
+                historialContainer.style.display = 'block';
+                actualizarHistorialTemporalUI();
                 
                 actualizarEstado("MODO LÁSER ACTIVO - Honeywell listo", "laser");
                 
