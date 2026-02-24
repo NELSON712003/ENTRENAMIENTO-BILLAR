@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h2 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    
+    .player-card {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 2px solid #e9ecef;
+    }
+    
+    .audio-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .audio-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      color: white;
+      font-size: 24px;
+    }
+    
+    .audio-details h3 {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    
+    .audio-details p {
+      color: #666;
+      font-size: 12px;
+    }
+    
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-small {
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+      background: #6c757d;
+    }
+    
+    .progress-container {
+      margin: 20px 0;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .volume-slider {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #e9ecef;
+      border-radius: 3px;
+      outline: none;
+    }
+    
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .playlist {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+    
+    .playlist-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+    
+    .playlist-item.active {
+      background: linear-gradient(90deg, #667eea20 0%, #764ba220 100%);
+      border-left-color: #667eea;
+    }
+    
+    .playlist-item .number {
+      width: 30px;
+      height: 30px;
+      background: #dee2e6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #495057;
+    }
+    
+    .playlist-item.active .number {
+      background: #667eea;
+      color: white;
+    }
+    
+    .playlist-item .info {
+      flex: 1;
+    }
+    
+    .playlist-item .info h4 {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 2px;
+    }
+    
+    .playlist-item .info span {
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .visualizer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 40px;
+      gap: 3px;
+      margin: 15px 0;
+    }
+    
+    .bar {
+      width: 4px;
+      background: linear-gradient(to top, #667eea, #764ba2);
+      border-radius: 2px;
+      animation: bounce 0.5s ease-in-out infinite alternate;
+    }
+    
+    @keyframes bounce {
+      from { height: 5px; }
+      to { height: 35px; }
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎵 Reproductor MP3</h2>
+    
+    <div id="loading" class="loading">
+      Cargando lista de audios...
+    </div>
+    
+    <div id="playerContent" class="hidden">
+      <div class="player-card">
+        <div class="audio-info">
+          <div class="audio-icon">🎵</div>
+          <div class="audio-details">
+            <h3 id="currentTitle">Selecciona un audio</h3>
+            <p id="currentStatus">Listo para reproducir</p>
+          </div>
+        </div>
+        
+        <div class="visualizer" id="visualizer">
+          <div class="bar" style="animation-delay: 0s"></div>
+          <div class="bar" style="animation-delay: 0.1s"></div>
+          <div class="bar" style="animation-delay: 0.2s"></div>
+          <div class="bar" style="animation-delay: 0.3s"></div>
+          <div class="bar" style="animation-delay: 0.4s"></div>
+        </div>
+        
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="time-display">
+            <span id="currentTime">0:00</span>
+            <span id="duration">0:00</span>
+          </div>
+        </div>
+        
+        <div class="controls">
+          <button class="btn btn-small" onclick="anterior()" title="Anterior">⏮</button>
+          <button class="btn" id="playBtn" onclick="togglePlay()" title="Reproducir/Pausar">▶</button>
+          <button class="btn btn-small" onclick="siguiente()" title="Siguiente">⏭</button>
+        </div>
+        
+        <div class="volume-container">
+          <span>🔊</span>
+          <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" onchange="cambiarVolumen(this.value)">
+        </div>
+      </div>
+      
+      <div class="playlist" id="playlist"></div>
+    </div>
+  </div>
+
+  <audio id="audioPlayer" preload="metadata"></audio>
+
+  <script>
+    let audioPlayer = document.getElementById('audioPlayer');
+    let playlist = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    
+    // Cargar audios al iniciar
+    google.script.run
+      .withSuccessHandler(function(audios) {
+        playlist = audios;
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('playerContent').classList.remove('hidden');
+        renderPlaylist();
+        if (playlist.length > 0) {
+          cargarAudio(0);
+        }
+      })
+      .withFailureHandler(function(error) {
+        document.getElementById('loading').innerHTML = 'Error: ' + error.message;
+      })
+      .obtenerAudios();
+    
+    function renderPlaylist() {
+      const container = document.getElementById('playlist');
+      container.innerHTML = '';
+      
+      playlist.forEach((audio, index) => {
+        const item = document.createElement('div');
+        item.className = 'playlist-item';
+        item.onclick = () => cargarAudio(index);
+        item.innerHTML = `
+          <div class="number">${index + 1}</div>
+          <div class="info">
+            <h4>${audio.nombre}</h4>
+            <span>Fila ${audio.fila}</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+    
+    function cargarAudio(index) {
+      currentIndex = index;
+      const audio = playlist[index];
+      
+      audioPlayer.src = audio.url;
+      document.getElementById('currentTitle').textContent = audio.nombre;
+      document.getElementById('currentStatus').textContent = 'Cargando...';
+      
+      // Actualizar clase activa en playlist
+      document.querySelectorAll('.playlist-item').forEach((item, i) => {
+        item.classList.toggle('active', i === index);
+      });
+      
+      audioPlayer.load();
+      reproducir();
+    }
+    
+    function togglePlay() {
+      if (isPlaying) {
+        pausar();
+      } else {
+        reproducir();
+      }
+    }
+    
+    function reproducir() {
+      audioPlayer.play().then(() => {
+        isPlaying = true;
+        document.getElementById('playBtn').innerHTML = '⏸';
+        document.getElementById('currentStatus').textContent = 'Reproduciendo...';
+        document.getElementById('visualizer').style.opacity = '1';
+      }).catch(e => {
+        console.error('Error al reproducir:', e);
+      });
+    }
+    
+    function pausar() {
+      audioPlayer.pause();
+      isPlaying = false;
+      document.getElementById('playBtn').innerHTML = '▶';
+      document.getElementById('currentStatus').textContent = 'Pausado';
+      document.getElementById('visualizer').style.opacity = '0.3';
+    }
+    
+    function anterior() {
+      if (currentIndex > 0) {
+        cargarAudio(currentIndex - 1);
+      }
+    }
+    
+    function siguiente() {
+      if (currentIndex < playlist.length - 1) {
+        cargarAudio(currentIndex + 1);
+      }
+    }
+    
+    function cambiarVolumen(valor) {
+      audioPlayer.volume = valor / 100;
+    }
+    
+    // Actualizar progreso
+    audioPlayer.addEventListener('timeupdate', function() {
+      const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('currentTime').textContent = formatTime(audioPlayer.currentTime);
+    });
+    
+    audioPlayer.addEventListener('loadedmetadata', function() {
+      document.getElementById('duration').textContent = formatTime(audioPlayer.duration);
+    });
+    
+    audioPlayer.addEventListener('ended', function() {
+      siguiente();
+    });
+    
+    // Click en barra de progreso
+    document.getElementById('progressBar').addEventListener('click', function(e) {
+      const rect = this.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      audioPlayer.currentTime = pos * audioPlayer.duration;
+    });
+    
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+    
+    // Inicializar volumen
+    audioPlayer.volume = 0.8;
+    document.getElementById('visualizer').style.opacity = '0.3';
+  </script>
+</body>
+</html>
