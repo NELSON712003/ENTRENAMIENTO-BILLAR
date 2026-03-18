@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Escáner Sticker Natura</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            padding-bottom: 30px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* STICKER PREVIEW - SIEMPRE VISIBLE ARRIBA */
+        .sticker-container {
+            background: #f8f9fa;
+            border: 2px dashed #adb5bd;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .sticker-box {
+            background: white;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px;
+            max-width: 320px;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-family: 'Courier New', monospace;
+            text-align: left;
+        }
+
+        .sticker-barcode-area {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .barcode-lines {
+            height: 40px;
+            background: repeating-linear-gradient(
+                90deg,
+                #000 0px, #000 2px,
+                transparent 2px, transparent 3px,
+                #000 3px, #000 5px,
+                transparent 5px, transparent 6px
+            );
+            margin-bottom: 4px;
+        }
+
+        .barcode-number {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .sticker-header-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0 8px 0;
+            font-size: 10px;
+            font-weight: bold;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 4px;
+        }
+
+        .sticker-client-name {
+            font-size: 11px;
+            font-weight: bold;
+            margin: 6px 0;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+
+        .sticker-address {
+            font-size: 9px;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .sticker-city {
+            font-size: 9px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            font-size: 9px;
+            margin-top: 6px;
+            border-top: 1px solid #000;
+            padding-top: 4px;
+        }
+
+        .sticker-grid-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sticker-label {
+            font-weight: bold;
+        }
+
+        .sticker-cb {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* ESCÁNER COMPACTO */
+        .scanner-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        /* Área del escáner */
+        #reader {
+            width: 100%;
+            height: 200px;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+            border: 3px solid #38ef7d;
+            margin-bottom: 10px;
+        }
+
+        #reader.active {
+            display: block;
+        }
+
+        .scan-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .scan-btn.scanning {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .scanner-controls {
+            display: none;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .scanner-controls.active {
+            display: flex;
+        }
+
+        .ctrl-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ctrl-btn.switch { background: #667eea; color: white; }
+        .ctrl-btn.stop { background: #ff4757; color: white; }
+
+        /* Resultado del escaneo */
+        .scan-result {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .scan-result.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scan-result-code {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #155724;
+        }
+
+        /* Input manual */
+        .manual-section {
+            display: none;
+        }
+
+        .manual-section.active {
+            display: block;
+        }
+
+        .manual-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .manual-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Formulario */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .required { color: #e74c3c; }
+
+        input[type="text"], input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input.scanned {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        /* Botón enviar */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+        }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: all 0.3s;
+            opacity: 0;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: #2ed573; color: white; }
+        .toast.error { background: #ff4757; color: white; }
+        .toast.info { background: #3742fa; color: white; }
+
+        /* Historial */
+        .history-item {
+            background: #f8f9fa;
+            border-left: 3px solid #667eea;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .history-code {
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 8px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 Escáner Sticker</h1>
+            <p>Natura/Nmedel - Medellín</p>
+        </div>
+
+        <!-- STICKER PREVIEW (SIEMPRE ARRIBA Y VISIBLE) -->
+        <div class="card">
+            <div class="card-title">🏷️ Sticker</div>
+            <div class="sticker-container">
+                <div class="sticker-box" id="stickerPreview">
+                    <div class="sticker-barcode-area">
+                        <div class="barcode-lines"></div>
+                        <div class="barcode-number" id="previewBarcode">10016026559322</div>
+                    </div>
+                    
+                    <div class="sticker-header-row">
+                        <span>CICLO: <b id="previewCiclo">05</b></span>
+                        <span>SECTOR: <b id="previewSector">0280</b></span>
+                        <span>NMEDEL</span>
+                    </div>
+                    
+                    <div class="sticker-client-name" id="previewNombre">
+                        MARIA FERNANDA CARDONA OCAMPO
+                    </div>
+                    
+                    <div class="sticker-address" id="previewDireccion">
+                        KR 40 # 20 DB-36-CASTROPOL<br>
+                        CASA SEGUNDO PISO-CANCHA DE POLVO
+                    </div>
+                    
+                    <div class="sticker-city" id="previewCiudad">MEDELLIN</div>
+                    
+                    <div class="sticker-grid">
+                        <div class="sticker-grid-item">
+                            <span class="sticker-label">Tel:</span>
+                            <span id="previewTel">3148228973</span>
+                        </div>
+                        <div class="sticker-grid-item">
+                            <span class="sticker-label">Cajas:</span>
+                            <span id="previewCajas">2</span>
+                        </div>
+                        <div class="sticker-grid-item sticker-cb">
+                            <span class="sticker-label">CB:</span>
+                            <span id="previewCB">440651</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESCANER -->
+        <div class="card">
+            <div class="card-title">📷 Escanear Código</div>
+            
+            <div class="mode-toggle">
+                <button class="mode-btn active" onclick="setMode('camera')" id="btnCam">📷 Cámara</button>
+                <button class="mode-btn" onclick="setMode('manual')" id="btnMan">⌨️ Manual</button>
+            </div>
+
+            <!-- Modo Cámara -->
+            <div id="cameraMode">
+                <div class="scanner-wrapper">
+                    <div id="reader"></div>
+                </div>
+                
+                <button class="scan-btn" id="scanBtn" onclick="toggleScan()">
+                    <span>📷</span>
+                    <span id="scanText">Iniciar Cámara</span>
+                </button>
+
+                <div class="scanner-controls" id="controls">
+                    <button class="ctrl-btn switch" onclick="switchCam()">🔄 Cambiar</button>
+                    <button class="ctrl-btn stop" onclick="stopScan()">⏹ Detener</button>
+                </div>
+
+                <div class="scan-result" id="scanResult">
+                    <div style="font-size: 11px; color: #155724; margin-bottom: 4px;">✅ Código detectado</div>
+                    <div class="scan-result-code" id="resultCode">-</div>
+                </div>
+            </div>
+
+            <!-- Modo Manual -->
+            <div class="manual-section" id="manualMode">
+                <input type="text" class="manual-input" id="manualInput" placeholder="Ingresa código de barras">
+                <button class="manual-btn" onclick="useManual()">✅ Usar código</button>
+            </div>
+        </div>
+
+        <!-- FORMULARIO -->
+        <div class="card">
+            <div class="card-title">📝 Datos</div>
+            
+            <form id="mainForm">
+                <div class="form-group">
+                    <label>Código Barras <span class="required">*</span></label>
+                    <input type="text" id="codigoBarras" readonly required>
+                </div>
+
+                <div class="form-group">
+                    <label>Código Cliente (CB) <span class="required">*</span></label>
+                    <input type="text" id="codigoCliente" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nombre <span class="required">*</span></label>
+                    <input type="text" id="nombreCliente" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Dirección <span class="required">*</span></label>
+                    <input type="text" id="direccionCliente" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="telefono">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Ciclo</label>
+                        <input type="text" id="ciclo">
+                    </div>
+                    <div class="form-group">
+                        <label>Sector</label>
+                        <input type="text" id="sector">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cajas</label>
+                    <input type="text" id="cajas">
+                </div>
+
+                <div class="quick-btns">
+                    <button type="button" class="quick-btn" onclick="loadExample()">📝 Ejemplo</button>
+                    <button type="button" class="quick-btn" onclick="clearAll()">🗑️ Limpiar</button>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span class="spinner" id="spin"></span>
+                    <span id="btnTxt">📤 Enviar a Sheets</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- HISTORIAL -->
+        <div class="card">
+            <div class="card-title">📋 Historial (<span id="count">0</span>)</div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_ID_DE_SCRIPT/exec';
+        
+        let html5QrCode;
+        let isScanning = false;
+        let currentCamera = 'environment';
+        let history = JSON.parse(localStorage.getItem('stickerHistory')) || [];
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            updateHistory();
+            updatePreview();
+            
+            // Listeners para preview en tiempo real
+            ['codigoBarras', 'codigoCliente', 'nombreCliente', 'direccionCliente', 
+             'telefono', 'ciclo', 'sector', 'cajas'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', updatePreview);
+            });
+        });
+
+        // Cambiar modo
+        function setMode(mode) {
+            document.getElementById('btnCam').classList.toggle('active', mode === 'camera');
+            document.getElementById('btnMan').classList.toggle('active', mode === 'manual');
+            document.getElementById('cameraMode').style.display = mode === 'camera' ? 'block' : 'none';
+            document.getElementById('manualMode').classList.toggle('active', mode === 'manual');
+            
+            if (mode === 'manual') stopScan();
+        }
+
+        // ESCANER
+        async function toggleScan() {
+            if (isScanning) {
+                stopScan();
+                return;
+            }
+
+            const reader = document.getElementById('reader');
+            const btn = document.getElementById('scanBtn');
+            const txt = document.getElementById('scanText');
+
+            try {
+                html5QrCode = new Html5Qrcode("reader");
+                
+                await html5QrCode.start(
+                    { facingMode: currentCamera },
+                    { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 80 },
+                        formatsToSupport: [
+                            Html5QrcodeSupportedFormats.CODE_128,
+                            Html5QrcodeSupportedFormats.EAN_13,
+                            Html5QrcodeSupportedFormats.UPC_A
+                        ]
+                    },
+                    onScanSuccess,
+                    onScanFailure
+                );
+
+                isScanning = true;
+                reader.classList.add('active');
+                btn.classList.add('scanning');
+                txt.textContent = 'Detener';
+                document.getElementById('controls').classList.add('active');
+                
+                showToast('📷 Apunta al código de barras', 'info');
+
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Error cámara. Usa modo manual', 'error');
+                setMode('manual');
+            }
+        }
+
+        function stopScan() {
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().catch(() => {});
+            }
+            
+            isScanning = false;
+            document.getElementById('reader').classList.remove('active');
+            document.getElementById('scanBtn').classList.remove('scanning');
+            document.getElementById('scanText').textContent = 'Iniciar Cámara';
+            document.getElementById('controls').classList.remove('active');
+        }
+
+        async function switchCam() {
+            stopScan();
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            setTimeout(toggleScan, 500);
+        }
+
+        function onScanSuccess(decodedText) {
+            // Evitar duplicados
+            if (document.getElementById('codigoBarras').value === decodedText) return;
+            
+            document.getElementById('codigoBarras').value = decodedText;
+            document.getElementById('codigoBarras').classList.add('scanned');
+            
+            document.getElementById('resultCode').textContent = decodedText;
+            document.getElementById('scanResult').classList.add('show');
+            
+            updatePreview();
+            showToast('✅ Código: ' + decodedText, 'success');
+            
+            if (navigator.vibrate) navigator.vibrate(200);
+            
+            // Auto focus
+            setTimeout(() => document.getElementById('codigoCliente').focus(), 300);
+        }
+
+        function onScanFailure() {}
+
+        // MANUAL
+        function useManual() {
+            const val = document.getElementById('manualInput').value.trim();
+            if (!val) {
+                showToast('⚠️ Ingresa código', 'error');
+                return;
+            }
+            
+            document.getElementById('codigoBarras').value = val;
+            document.getElementById('codigoBarras').classList.add('scanned');
+            document.getElementById('manualInput').value = '';
+            
+            updatePreview();
+            showToast('✅ Código manual: ' + val, 'success');
+            document.getElementById('codigoCliente').focus();
+        }
+
+        // PREVIEW
+        function updatePreview() {
+            const getVal = (id, def) => document.getElementById(id)?.value || def;
+            
+            document.getElementById('previewBarcode').textContent = getVal('codigoBarras', '10016026559322');
+            document.getElementById('previewCiclo').textContent = getVal('ciclo', '05');
+            document.getElementById('previewSector').textContent = getVal('sector', '0280');
+            document.getElementById('previewNombre').textContent = getVal('nombreCliente', 'MARIA FERNANDA CARDONA OCAMPO').toUpperCase();
+            document.getElementById('previewDireccion').innerHTML = getVal('direccionCliente', 'KR 40 # 20 DB-36-CASTROPOL\nCASA SEGUNDO PISO-CANCHA DE POLVO').replace(/\n/g, '<br>');
+            document.getElementById('previewCiudad').textContent = 'MEDELLIN';
+            document.getElementById('previewTel').textContent = getVal('telefono', '3148228973');
+            document.getElementById('previewCajas').textContent = getVal('cajas', '2');
+            document.getElementById('previewCB').textContent = getVal('codigoCliente', '440651');
+        }
+
+        // ENVÍO
+        document.getElementById('mainForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.querySelector('.submit-btn');
+            const spin = document.getElementById('spin');
+            const txt = document.getElementById('btnTxt');
+            
+            const data = {
+                codigoBarras: document.getElementById('codigoBarras').value,
+                codigoCliente: document.getElementById('codigoCliente').value,
+                nombreCliente: document.getElementById('nombreCliente').value,
+                direccionCliente: document.getElementById('direccionCliente').value,
+                telefono: document.getElementById('telefono').value,
+                ciclo: document.getElementById('ciclo').value,
+                sector: document.getElementById('sector').value,
+                cajas: document.getElementById('cajas').value,
+                fecha: new Date().toLocaleString('es-CO')
+            };
+
+            if (!data.codigoBarras || !data.codigoCliente || !data.nombreCliente) {
+                showToast('⚠️ Completa campos obligatorios', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            spin.style.display = 'block';
+            txt.textContent = 'Enviando...';
+            
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                history.unshift(data);
+                if (history.length > 20) history.pop();
+                localStorage.setItem('stickerHistory', JSON.stringify(history));
+                updateHistory();
+
+                showToast('✅ ¡Enviado a Google Sheets!', 'success');
+                clearAll();
+                
+            } catch (err) {
+                showToast('❌ Error al enviar', 'error');
+            } finally {
+                btn.disabled = false;
+                spin.style.display = 'none';
+                txt.textContent = '📤 Enviar a Sheets';
+            }
+        });
+
+        // UTILIDADES
+        function loadExample() {
+            document.getElementById('codigoBarras').value = '10016026559322';
+            document.getElementById('codigoCliente').value = '440651';
+            document.getElementById('nombreCliente').value = 'Maria Fernanda Cardona Ocampo';
+            document.getElementById('direccionCliente').value = 'KR 40 # 20 DB-36-CASTROPOL, Casa segundo piso';
+            document.getElementById('telefono').value = '3148228973';
+            document.getElementById('ciclo').value = '05';
+            document.getElementById('sector').value = '0280';
+            document.getElementById('cajas').value = '2';
+            document.getElementById('codigoBarras').classList.add('scanned');
+            updatePreview();
+            showToast('📝 Ejemplo cargado', 'info');
+        }
+
+        function clearAll() {
+            document.getElementById('mainForm').reset();
+            document.getElementById('codigoBarras').classList.remove('scanned');
+            document.getElementById('scanResult').classList.remove('show');
+            updatePreview();
+        }
+
+        function updateHistory() {
+            document.getElementById('count').textContent = history.length;
+            const list = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                list.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Sin registros</div>';
+                return;
+            }
+            
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div class="history-code">${h.codigoBarras}</div>
+                    <div>${h.nombreCliente} • CB:${h.codigoCliente}</div>
+                    <div style="color:#999;font-size:11px;">${h.fecha}</div>
+                </div>
+            `).join('');
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + type + ' show';
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
