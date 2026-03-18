@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Escáner Sticker Natura</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
@@ -19,7 +18,6 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 10px;
-            padding-bottom: 30px;
         }
 
         .container {
@@ -27,7 +25,6 @@
             margin: 0 auto;
         }
 
-        /* Header */
         .header {
             text-align: center;
             color: white;
@@ -35,7 +32,6 @@
             padding: 15px;
             background: rgba(255,255,255,0.15);
             border-radius: 20px;
-            backdrop-filter: blur(10px);
         }
 
         .header h1 {
@@ -43,7 +39,6 @@
             margin-bottom: 5px;
         }
 
-        /* Cards */
         .card {
             background: white;
             border-radius: 20px;
@@ -62,13 +57,12 @@
             gap: 8px;
         }
 
-        /* STICKER PREVIEW - SIEMPRE VISIBLE ARRIBA */
+        /* STICKER PREVIEW */
         .sticker-container {
             background: #f8f9fa;
             border: 2px dashed #adb5bd;
             border-radius: 15px;
             padding: 15px;
-            margin-bottom: 15px;
             text-align: center;
         }
 
@@ -161,64 +155,49 @@
             font-weight: bold;
         }
 
-        /* ESCÁNER COMPACTO */
-        .scanner-wrapper {
+        /* ESCANER - CORREGIDO */
+        .scanner-container {
             position: relative;
-            margin-bottom: 15px;
-        }
-
-        .mode-toggle {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .mode-btn.active {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-        /* Área del escáner */
-        #reader {
             width: 100%;
-            height: 200px;
+            height: 250px;
+            background: #000;
             border-radius: 15px;
             overflow: hidden;
-            display: none;
-            border: 3px solid #38ef7d;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            display: none; /* Oculto por defecto */
         }
 
-        #reader.active {
+        .scanner-container.active {
             display: block;
+        }
+
+        #reader {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* El video debe verse */
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
         }
 
         .scan-btn {
             width: 100%;
-            padding: 15px;
+            padding: 18px;
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .scan-btn.scanning {
@@ -228,7 +207,6 @@
         .scanner-controls {
             display: none;
             gap: 10px;
-            margin-top: 10px;
         }
 
         .scanner-controls.active {
@@ -237,10 +215,10 @@
 
         .ctrl-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -248,7 +226,6 @@
         .ctrl-btn.switch { background: #667eea; color: white; }
         .ctrl-btn.stop { background: #ff4757; color: white; }
 
-        /* Resultado del escaneo */
         .scan-result {
             background: #d4edda;
             border: 2px solid #28a745;
@@ -264,46 +241,16 @@
             animation: fadeIn 0.3s;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .scan-result-code {
             font-family: 'Courier New', monospace;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #155724;
         }
 
-        /* Input manual */
-        .manual-section {
-            display: none;
-        }
-
-        .manual-section.active {
-            display: block;
-        }
-
-        .manual-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-
-        .manual-btn {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Formulario */
@@ -323,10 +270,10 @@
 
         input[type="text"], input[type="tel"] {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 16px;
         }
 
         input:focus {
@@ -339,52 +286,32 @@
             border-color: #4caf50;
         }
 
-        /* Botón enviar */
         .submit-btn {
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 17px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             margin-top: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
         .submit-btn:disabled {
             background: #ccc;
         }
 
-        .spinner {
-            display: none;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Toast */
         .toast {
             position: fixed;
-            top: 15px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            padding: 12px 20px;
+            padding: 15px 25px;
             border-radius: 25px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             z-index: 1000;
             transition: all 0.3s;
@@ -400,7 +327,22 @@
         .toast.error { background: #ff4757; color: white; }
         .toast.info { background: #3742fa; color: white; }
 
-        /* Historial */
+        .quick-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
         .history-item {
             background: #f8f9fa;
             border-left: 3px solid #667eea;
@@ -415,22 +357,6 @@
             font-weight: bold;
             font-size: 13px;
         }
-
-        .quick-btns {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .quick-btn {
-            flex: 1;
-            padding: 8px;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -444,7 +370,7 @@
             <p>Natura/Nmedel - Medellín</p>
         </div>
 
-        <!-- STICKER PREVIEW (SIEMPRE ARRIBA Y VISIBLE) -->
+        <!-- STICKER PREVIEW -->
         <div class="card">
             <div class="card-title">🏷️ Sticker</div>
             <div class="sticker-container">
@@ -493,37 +419,24 @@
         <div class="card">
             <div class="card-title">📷 Escanear Código</div>
             
-            <div class="mode-toggle">
-                <button class="mode-btn active" onclick="setMode('camera')" id="btnCam">📷 Cámara</button>
-                <button class="mode-btn" onclick="setMode('manual')" id="btnMan">⌨️ Manual</button>
+            <!-- Contenedor del escáner - IMPORTANTE: debe estar visible antes de iniciar -->
+            <div class="scanner-container" id="scannerContainer">
+                <div id="reader"></div>
             </div>
 
-            <!-- Modo Cámara -->
-            <div id="cameraMode">
-                <div class="scanner-wrapper">
-                    <div id="reader"></div>
-                </div>
-                
-                <button class="scan-btn" id="scanBtn" onclick="toggleScan()">
-                    <span>📷</span>
-                    <span id="scanText">Iniciar Cámara</span>
-                </button>
+            <button class="scan-btn" id="scanBtn" onclick="toggleScan()">
+                <span>📷</span>
+                <span id="scanText">Iniciar Cámara</span>
+            </button>
 
-                <div class="scanner-controls" id="controls">
-                    <button class="ctrl-btn switch" onclick="switchCam()">🔄 Cambiar</button>
-                    <button class="ctrl-btn stop" onclick="stopScan()">⏹ Detener</button>
-                </div>
-
-                <div class="scan-result" id="scanResult">
-                    <div style="font-size: 11px; color: #155724; margin-bottom: 4px;">✅ Código detectado</div>
-                    <div class="scan-result-code" id="resultCode">-</div>
-                </div>
+            <div class="scanner-controls" id="scannerControls">
+                <button class="ctrl-btn switch" onclick="switchCamera()">🔄 Cambiar Cámara</button>
+                <button class="ctrl-btn stop" onclick="stopScan()">⏹ Detener</button>
             </div>
 
-            <!-- Modo Manual -->
-            <div class="manual-section" id="manualMode">
-                <input type="text" class="manual-input" id="manualInput" placeholder="Ingresa código de barras">
-                <button class="manual-btn" onclick="useManual()">✅ Usar código</button>
+            <div class="scan-result" id="scanResult">
+                <div style="font-size: 12px; color: #155724; margin-bottom: 5px;">✅ Código detectado</div>
+                <div class="scan-result-code" id="resultCode">-</div>
             </div>
         </div>
 
@@ -534,53 +447,52 @@
             <form id="mainForm">
                 <div class="form-group">
                     <label>Código Barras <span class="required">*</span></label>
-                    <input type="text" id="codigoBarras" readonly required>
+                    <input type="text" id="codigoBarras" readonly required placeholder="Presiona 'Iniciar Cámara' y escanea">
                 </div>
 
                 <div class="form-group">
                     <label>Código Cliente (CB) <span class="required">*</span></label>
-                    <input type="text" id="codigoCliente" required>
+                    <input type="text" id="codigoCliente" required placeholder="Ej: 440651">
                 </div>
 
                 <div class="form-group">
-                    <label>Nombre <span class="required">*</span></label>
-                    <input type="text" id="nombreCliente" required>
+                    <label>Nombre Cliente <span class="required">*</span></label>
+                    <input type="text" id="nombreCliente" required placeholder="Nombre completo">
                 </div>
 
                 <div class="form-group">
                     <label>Dirección <span class="required">*</span></label>
-                    <input type="text" id="direccionCliente" required>
+                    <input type="text" id="direccionCliente" required placeholder="Dirección completa">
                 </div>
 
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="tel" id="telefono">
+                    <input type="tel" id="telefono" placeholder="Ej: 3148228973">
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group">
                         <label>Ciclo</label>
-                        <input type="text" id="ciclo">
+                        <input type="text" id="ciclo" placeholder="Ej: 05">
                     </div>
                     <div class="form-group">
                         <label>Sector</label>
-                        <input type="text" id="sector">
+                        <input type="text" id="sector" placeholder="Ej: 0280">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Cajas</label>
-                    <input type="text" id="cajas">
+                    <input type="text" id="cajas" placeholder="Ej: 2">
                 </div>
 
                 <div class="quick-btns">
-                    <button type="button" class="quick-btn" onclick="loadExample()">📝 Ejemplo</button>
-                    <button type="button" class="quick-btn" onclick="clearAll()">🗑️ Limpiar</button>
+                    <button type="button" class="quick-btn" onclick="loadExample()">📝 Cargar Ejemplo</button>
+                    <button type="button" class="quick-btn" onclick="clearForm()">🗑️ Limpiar</button>
                 </div>
 
-                <button type="submit" class="submit-btn">
-                    <span class="spinner" id="spin"></span>
-                    <span id="btnTxt">📤 Enviar a Sheets</span>
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    📤 Enviar a Google Sheets
                 </button>
             </form>
         </div>
@@ -596,9 +508,9 @@
         // CONFIGURACIÓN
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwloBDsFGmEyByoRmMsKK3vFEqCl8PJYvwxRJ4_4IskcKMUgDFu7d2CEGVxUZPO_iXkwQ/exec';
         
-        let html5QrCode;
+        let html5QrCode = null;
         let isScanning = false;
-        let currentCamera = 'environment';
+        let currentCamera = 'environment'; // 'environment' = trasera, 'user' = frontal
         let history = JSON.parse(localStorage.getItem('stickerHistory')) || [];
 
         // Inicializar
@@ -613,117 +525,168 @@
             });
         });
 
-        // Cambiar modo
-        function setMode(mode) {
-            document.getElementById('btnCam').classList.toggle('active', mode === 'camera');
-            document.getElementById('btnMan').classList.toggle('active', mode === 'manual');
-            document.getElementById('cameraMode').style.display = mode === 'camera' ? 'block' : 'none';
-            document.getElementById('manualMode').classList.toggle('active', mode === 'manual');
-            
-            if (mode === 'manual') stopScan();
-        }
-
-        // ESCANER
+        // ==========================================
+        // FUNCIONES DEL ESCÁNER - CORREGIDAS
+        // ==========================================
+        
         async function toggleScan() {
             if (isScanning) {
                 stopScan();
                 return;
             }
 
-            const reader = document.getElementById('reader');
+            const container = document.getElementById('scannerContainer');
             const btn = document.getElementById('scanBtn');
-            const txt = document.getElementById('scanText');
+            const btnText = document.getElementById('scanText');
+            const controls = document.getElementById('scannerControls');
 
             try {
+                // PRIMERO mostrar el contenedor (IMPORTANTE)
+                container.classList.add('active');
+                
+                // Pequeña espera para que el DOM se actualice
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Crear instancia del escáner
                 html5QrCode = new Html5Qrcode("reader");
                 
+                // Configuración optimizada para códigos de barras
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 280, height: 100 },
+                    aspectRatio: 2.5,
+                    disableFlip: false,
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODABAR,
+                        Html5QrcodeSupportedFormats.ITF
+                    ]
+                };
+
+                // Iniciar cámara
                 await html5QrCode.start(
                     { facingMode: currentCamera },
-                    { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 80 },
-                        formatsToSupport: [
-                            Html5QrcodeSupportedFormats.CODE_128,
-                            Html5QrcodeSupportedFormats.EAN_13,
-                            Html5QrcodeSupportedFormats.UPC_A
-                        ]
-                    },
+                    config,
                     onScanSuccess,
                     onScanFailure
                 );
 
+                // Éxito - actualizar UI
                 isScanning = true;
-                reader.classList.add('active');
                 btn.classList.add('scanning');
-                txt.textContent = 'Detener';
-                document.getElementById('controls').classList.add('active');
+                btnText.textContent = 'Detener Cámara';
+                controls.classList.add('active');
                 
-                showToast('📷 Apunta al código de barras', 'info');
+                showToast('📷 Cámara activada. Apunta al código de barras', 'info');
 
             } catch (err) {
-                console.error(err);
-                showToast('❌ Error cámara. Usa modo manual', 'error');
-                setMode('manual');
+                console.error('Error al iniciar cámara:', err);
+                
+                // Ocultar contenedor si falla
+                container.classList.remove('active');
+                
+                let errorMsg = 'Error al acceder a la cámara';
+                
+                if (err.name === 'NotAllowedError') {
+                    errorMsg = '❌ Permiso de cámara denegado. Habilita permisos en configuración.';
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = '❌ No se encontró cámara disponible';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg = '❌ La cámara está siendo usada por otra app';
+                }
+                
+                showToast(errorMsg, 'error');
             }
         }
 
         function stopScan() {
+            const container = document.getElementById('scannerContainer');
+            const btn = document.getElementById('scanBtn');
+            const btnText = document.getElementById('scanText');
+            const controls = document.getElementById('scannerControls');
+
             if (html5QrCode && isScanning) {
-                html5QrCode.stop().catch(() => {});
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    console.log('Escáner detenido');
+                }).catch(err => {
+                    console.error('Error al detener:', err);
+                });
             }
-            
+
             isScanning = false;
-            document.getElementById('reader').classList.remove('active');
-            document.getElementById('scanBtn').classList.remove('scanning');
-            document.getElementById('scanText').textContent = 'Iniciar Cámara';
-            document.getElementById('controls').classList.remove('active');
+            container.classList.remove('active');
+            btn.classList.remove('scanning');
+            btnText.textContent = 'Iniciar Cámara';
+            controls.classList.remove('active');
         }
 
-        async function switchCam() {
+        async function switchCamera() {
+            if (!isScanning) return;
+            
+            // Detener actual
             stopScan();
+            
+            // Cambiar cámara
             currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
-            setTimeout(toggleScan, 500);
+            
+            // Esperar un poco y reiniciar
+            setTimeout(() => {
+                toggleScan();
+            }, 500);
+            
+            showToast(`🔄 Cambiando a cámara ${currentCamera === 'environment' ? 'trasera' : 'frontal'}...`, 'info');
         }
 
-        function onScanSuccess(decodedText) {
-            // Evitar duplicados
-            if (document.getElementById('codigoBarras').value === decodedText) return;
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('Código detectado:', decodedText);
             
-            document.getElementById('codigoBarras').value = decodedText;
-            document.getElementById('codigoBarras').classList.add('scanned');
+            // Evitar duplicados inmediatos
+            const lastCode = document.getElementById('codigoBarras').value;
+            if (lastCode === decodedText) return;
             
+            // Actualizar campos
+            const input = document.getElementById('codigoBarras');
+            input.value = decodedText;
+            input.classList.add('scanned');
+            
+            // Mostrar resultado
             document.getElementById('resultCode').textContent = decodedText;
             document.getElementById('scanResult').classList.add('show');
             
+            // Actualizar preview del sticker
             updatePreview();
-            showToast('✅ Código: ' + decodedText, 'success');
             
-            if (navigator.vibrate) navigator.vibrate(200);
+            // Notificación
+            showToast(`✅ Código: ${decodedText}`, 'success');
             
-            // Auto focus
-            setTimeout(() => document.getElementById('codigoCliente').focus(), 300);
-        }
-
-        function onScanFailure() {}
-
-        // MANUAL
-        function useManual() {
-            const val = document.getElementById('manualInput').value.trim();
-            if (!val) {
-                showToast('⚠️ Ingresa código', 'error');
-                return;
+            // Vibración en móvil
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
             }
             
-            document.getElementById('codigoBarras').value = val;
-            document.getElementById('codigoBarras').classList.add('scanned');
-            document.getElementById('manualInput').value = '';
+            // Auto-focus al siguiente campo
+            setTimeout(() => {
+                document.getElementById('codigoCliente').focus();
+            }, 300);
             
-            updatePreview();
-            showToast('✅ Código manual: ' + val, 'success');
-            document.getElementById('codigoCliente').focus();
+            // Opcional: detener escáner después de leer
+            // setTimeout(stopScan, 1000);
         }
 
-        // PREVIEW
+        function onScanFailure(error) {
+            // Ignorar errores normales de escaneo
+        }
+
+        // ==========================================
+        // PREVIEW Y FORMULARIO
+        // ==========================================
+        
         function updatePreview() {
             const getVal = (id, def) => document.getElementById(id)?.value || def;
             
@@ -738,13 +701,11 @@
             document.getElementById('previewCB').textContent = getVal('codigoCliente', '440651');
         }
 
-        // ENVÍO
+        // Envío a Google Sheets
         document.getElementById('mainForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const btn = document.querySelector('.submit-btn');
-            const spin = document.getElementById('spin');
-            const txt = document.getElementById('btnTxt');
+            const btn = document.getElementById('submitBtn');
             
             const data = {
                 codigoBarras: document.getElementById('codigoBarras').value,
@@ -758,14 +719,15 @@
                 fecha: new Date().toLocaleString('es-CO')
             };
 
-            if (!data.codigoBarras || !data.codigoCliente || !data.nombreCliente) {
-                showToast('⚠️ Completa campos obligatorios', 'error');
+            // Validación
+            if (!data.codigoBarras || !data.codigoCliente || !data.nombreCliente || !data.direccionCliente) {
+                showToast('⚠️ Completa todos los campos obligatorios (*)', 'error');
                 return;
             }
 
+            // Loading
             btn.disabled = true;
-            spin.style.display = 'block';
-            txt.textContent = 'Enviando...';
+            btn.textContent = '⏳ Enviando...';
             
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
@@ -775,24 +737,26 @@
                     body: JSON.stringify(data)
                 });
 
+                // Guardar en historial
                 history.unshift(data);
                 if (history.length > 20) history.pop();
                 localStorage.setItem('stickerHistory', JSON.stringify(history));
                 updateHistory();
 
                 showToast('✅ ¡Enviado a Google Sheets!', 'success');
-                clearAll();
+                
+                // Limpiar formulario
+                clearForm();
                 
             } catch (err) {
-                showToast('❌ Error al enviar', 'error');
+                console.error(err);
+                showToast('❌ Error al enviar. Intenta de nuevo.', 'error');
             } finally {
                 btn.disabled = false;
-                spin.style.display = 'none';
-                txt.textContent = '📤 Enviar a Sheets';
+                btn.textContent = '📤 Enviar a Google Sheets';
             }
         });
 
-        // UTILIDADES
         function loadExample() {
             document.getElementById('codigoBarras').value = '10016026559322';
             document.getElementById('codigoCliente').value = '440651';
@@ -804,10 +768,10 @@
             document.getElementById('cajas').value = '2';
             document.getElementById('codigoBarras').classList.add('scanned');
             updatePreview();
-            showToast('📝 Ejemplo cargado', 'info');
+            showToast('📝 Datos de ejemplo cargados', 'info');
         }
 
-        function clearAll() {
+        function clearForm() {
             document.getElementById('mainForm').reset();
             document.getElementById('codigoBarras').classList.remove('scanned');
             document.getElementById('scanResult').classList.remove('show');
@@ -819,14 +783,14 @@
             const list = document.getElementById('historyList');
             
             if (history.length === 0) {
-                list.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Sin registros</div>';
+                list.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Sin registros aún</div>';
                 return;
             }
             
             list.innerHTML = history.map(h => `
                 <div class="history-item">
                     <div class="history-code">${h.codigoBarras}</div>
-                    <div>${h.nombreCliente} • CB:${h.codigoCliente}</div>
+                    <div>${h.nombreCliente} • CB: ${h.codigoCliente}</div>
                     <div style="color:#999;font-size:11px;">${h.fecha}</div>
                 </div>
             `).join('');
