@@ -21,153 +21,52 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
         }
 
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 20px;
+            margin-bottom: 10px;
+            padding: 10px;
         }
 
         .header h1 {
-            font-size: 22px;
-            margin-bottom: 5px;
+            font-size: 20px;
         }
 
-        .card {
+        /* ESCANER GRANDE - PRIMERO */
+        .scanner-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 15px;
             margin-bottom: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
-        .card-title {
+        .scanner-title {
             font-size: 16px;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* STICKER PREVIEW */
-        .sticker-container {
-            background: #f8f9fa;
-            border: 2px dashed #adb5bd;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .sticker-box {
-            background: white;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 12px;
-            max-width: 320px;
-            margin: 0 auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            font-family: 'Courier New', monospace;
-            text-align: left;
-        }
-
-        .sticker-barcode-area {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .barcode-lines {
-            height: 40px;
-            background: repeating-linear-gradient(
-                90deg,
-                #000 0px, #000 2px,
-                transparent 2px, transparent 3px,
-                #000 3px, #000 5px,
-                transparent 5px, transparent 6px
-            );
-            margin-bottom: 4px;
-        }
-
-        .barcode-number {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            letter-spacing: 1px;
-        }
-
-        .sticker-header-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0 8px 0;
-            font-size: 10px;
-            font-weight: bold;
-            border-bottom: 1.5px solid #000;
-            padding-bottom: 4px;
-        }
-
-        .sticker-client-name {
-            font-size: 11px;
-            font-weight: bold;
-            margin: 6px 0;
-            text-transform: uppercase;
-            line-height: 1.3;
-        }
-
-        .sticker-address {
-            font-size: 9px;
-            line-height: 1.3;
-            margin-bottom: 4px;
-        }
-
-        .sticker-city {
-            font-size: 9px;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-
-        .sticker-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-            font-size: 9px;
-            margin-top: 6px;
-            border-top: 1px solid #000;
-            padding-top: 4px;
-        }
-
-        .sticker-grid-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sticker-label {
-            font-weight: bold;
-        }
-
-        .sticker-cb {
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* ESCANER - CORREGIDO */
-        .scanner-container {
+        /* Contenedor del escáner - MÁS GRANDE */
+        .scanner-wrapper {
             position: relative;
             width: 100%;
-            height: 250px;
+            height: 350px; /* AUMENTADO */
             background: #000;
             border-radius: 15px;
             overflow: hidden;
-            margin-bottom: 15px;
-            display: none; /* Oculto por defecto */
+            margin-bottom: 10px;
+            display: none;
         }
 
-        .scanner-container.active {
+        .scanner-wrapper.active {
             display: block;
         }
 
@@ -176,11 +75,22 @@
             height: 100%;
         }
 
-        /* El video debe verse */
+        /* Forzar video a pantalla completa */
         #reader video {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
+
+        /* Área de escaneo más grande */
+        #reader__dashboard_section_csr span {
+            width: 90% !important;
+            height: 40% !important;
+            border: 3px solid #38ef7d !important;
+            box-shadow: 0 0 20px rgba(56, 239, 125, 0.5) !important;
         }
 
         .scan-btn {
@@ -197,7 +107,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
         .scan-btn.scanning {
@@ -207,6 +116,7 @@
         .scanner-controls {
             display: none;
             gap: 10px;
+            margin-top: 10px;
         }
 
         .scanner-controls.active {
@@ -215,10 +125,10 @@
 
         .ctrl-btn {
             flex: 1;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -230,7 +140,7 @@
             background: #d4edda;
             border: 2px solid #28a745;
             border-radius: 10px;
-            padding: 12px;
+            padding: 15px;
             margin-top: 10px;
             text-align: center;
             display: none;
@@ -238,42 +148,161 @@
 
         .scan-result.show {
             display: block;
-            animation: fadeIn 0.3s;
         }
 
         .scan-result-code {
             font-family: 'Courier New', monospace;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             color: #155724;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* STICKER PREVIEW - MÁS COMPACTO */
+        .sticker-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
-        /* Formulario */
-        .form-group {
+        .sticker-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .sticker-container {
+            background: #f8f9fa;
+            border: 2px dashed #adb5bd;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        .sticker-box {
+            background: white;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            font-size: 11px;
+        }
+
+        .sticker-barcode-area {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .barcode-lines {
+            height: 35px;
+            background: repeating-linear-gradient(
+                90deg,
+                #000 0px, #000 2px,
+                transparent 2px, transparent 3px,
+                #000 3px, #000 5px,
+                transparent 5px, transparent 6px
+            );
+            margin-bottom: 3px;
+        }
+
+        .barcode-number {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .sticker-header-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0 6px 0;
+            font-size: 9px;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3px;
+        }
+
+        .sticker-client-name {
+            font-size: 10px;
+            font-weight: bold;
+            margin: 4px 0;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .sticker-address {
+            font-size: 8px;
+            line-height: 1.2;
+            margin-bottom: 3px;
+        }
+
+        .sticker-city {
+            font-size: 8px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .sticker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 3px;
+            font-size: 8px;
+            margin-top: 4px;
+            border-top: 1px solid #000;
+            padding-top: 3px;
+        }
+
+        .sticker-grid-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sticker-label {
+            font-weight: bold;
+            font-size: 7px;
+        }
+
+        /* FORMULARIO */
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .form-title {
+            font-size: 16px;
+            font-weight: 700;
             margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
         }
 
         label {
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             color: #555;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .required { color: #e74c3c; }
 
         input[type="text"], input[type="tel"] {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
         }
 
         input:focus {
@@ -284,6 +313,12 @@
         input.scanned {
             background: #e8f5e9;
             border-color: #4caf50;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
         .submit-btn {
@@ -303,19 +338,38 @@
             background: #ccc;
         }
 
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Toast */
         .toast {
             position: fixed;
-            top: 20px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            padding: 15px 25px;
+            padding: 12px 20px;
             border-radius: 25px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             z-index: 1000;
             transition: all 0.3s;
             opacity: 0;
+            max-width: 90%;
+            text-align: center;
         }
 
         .toast.show {
@@ -326,21 +380,31 @@
         .toast.success { background: #2ed573; color: white; }
         .toast.error { background: #ff4757; color: white; }
         .toast.info { background: #3742fa; color: white; }
+        .toast.warning { background: #ffa502; color: white; }
 
-        .quick-btns {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+        /* Historial */
+        .history-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
-        .quick-btn {
-            flex: 1;
-            padding: 10px;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
+        .history-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
         }
 
         .history-item {
@@ -356,6 +420,30 @@
             font-family: monospace;
             font-weight: bold;
             font-size: 13px;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -366,13 +454,37 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>📦 Escáner Sticker</h1>
-            <p>Natura/Nmedel - Medellín</p>
+            <h1>📦 Escáner Sticker Natura</h1>
+            <p style="font-size: 13px;">Medellín - Sector 0280</p>
         </div>
 
-        <!-- STICKER PREVIEW -->
-        <div class="card">
-            <div class="card-title">🏷️ Sticker</div>
+        <!-- ESCANER - PRIMERO Y GRANDE -->
+        <div class="scanner-card">
+            <div class="scanner-title">📷 Escanear Código de Barras</div>
+            
+            <div class="scanner-wrapper" id="scannerBox">
+                <div id="reader"></div>
+            </div>
+
+            <button class="scan-btn" id="scanBtn" onclick="toggleScanner()">
+                <span>📷</span>
+                <span id="scanBtnText">Iniciar Cámara</span>
+            </button>
+
+            <div class="scanner-controls" id="scanControls">
+                <button class="ctrl-btn switch" onclick="switchCamera()">🔄 Cambiar</button>
+                <button class="ctrl-btn stop" onclick="stopScanner()">⏹ Detener</button>
+            </div>
+
+            <div class="scan-result" id="scanResult">
+                <div style="font-size: 11px; color: #155724; margin-bottom: 5px;">✅ Código detectado</div>
+                <div class="scan-result-code" id="scannedCode">-</div>
+            </div>
+        </div>
+
+        <!-- STICKER PREVIEW - MÁS COMPACTO -->
+        <div class="sticker-card">
+            <div class="sticker-title">🏷️ Vista Previa Sticker</div>
             <div class="sticker-container">
                 <div class="sticker-box" id="stickerPreview">
                     <div class="sticker-barcode-area">
@@ -399,55 +511,30 @@
                     
                     <div class="sticker-grid">
                         <div class="sticker-grid-item">
-                            <span class="sticker-label">Tel:</span>
+                            <span class="sticker-label">TEL:</span>
                             <span id="previewTel">3148228973</span>
                         </div>
                         <div class="sticker-grid-item">
-                            <span class="sticker-label">Cajas:</span>
+                            <span class="sticker-label">CAJAS:</span>
                             <span id="previewCajas">2</span>
                         </div>
-                        <div class="sticker-grid-item sticker-cb">
+                        <div class="sticker-grid-item">
                             <span class="sticker-label">CB:</span>
-                            <span id="previewCB">440651</span>
+                            <span id="previewCB" style="font-size: 11px; font-weight: bold;">440651</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ESCANER -->
-        <div class="card">
-            <div class="card-title">📷 Escanear Código</div>
-            
-            <!-- Contenedor del escáner - IMPORTANTE: debe estar visible antes de iniciar -->
-            <div class="scanner-container" id="scannerContainer">
-                <div id="reader"></div>
-            </div>
-
-            <button class="scan-btn" id="scanBtn" onclick="toggleScan()">
-                <span>📷</span>
-                <span id="scanText">Iniciar Cámara</span>
-            </button>
-
-            <div class="scanner-controls" id="scannerControls">
-                <button class="ctrl-btn switch" onclick="switchCamera()">🔄 Cambiar Cámara</button>
-                <button class="ctrl-btn stop" onclick="stopScan()">⏹ Detener</button>
-            </div>
-
-            <div class="scan-result" id="scanResult">
-                <div style="font-size: 12px; color: #155724; margin-bottom: 5px;">✅ Código detectado</div>
-                <div class="scan-result-code" id="resultCode">-</div>
-            </div>
-        </div>
-
         <!-- FORMULARIO -->
-        <div class="card">
-            <div class="card-title">📝 Datos</div>
+        <div class="form-card">
+            <div class="form-title">📝 Datos para Google Sheets</div>
             
-            <form id="mainForm">
+            <form id="dataForm">
                 <div class="form-group">
-                    <label>Código Barras <span class="required">*</span></label>
-                    <input type="text" id="codigoBarras" readonly required placeholder="Presiona 'Iniciar Cámara' y escanea">
+                    <label>Código de Barras <span class="required">*</span></label>
+                    <input type="text" id="codigoBarras" readonly required placeholder="Escanea con la cámara arriba ↑">
                 </div>
 
                 <div class="form-group">
@@ -470,24 +557,24 @@
                     <input type="tel" id="telefono" placeholder="Ej: 3148228973">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-row">
                     <div class="form-group">
                         <label>Ciclo</label>
-                        <input type="text" id="ciclo" placeholder="Ej: 05">
+                        <input type="text" id="ciclo" placeholder="05">
                     </div>
                     <div class="form-group">
                         <label>Sector</label>
-                        <input type="text" id="sector" placeholder="Ej: 0280">
+                        <input type="text" id="sector" placeholder="0280">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Cajas</label>
-                    <input type="text" id="cajas" placeholder="Ej: 2">
+                    <input type="text" id="cajas" placeholder="2">
                 </div>
 
                 <div class="quick-btns">
-                    <button type="button" class="quick-btn" onclick="loadExample()">📝 Cargar Ejemplo</button>
+                    <button type="button" class="quick-btn" onclick="loadExample()">📝 Ejemplo</button>
                     <button type="button" class="quick-btn" onclick="clearForm()">🗑️ Limpiar</button>
                 </div>
 
@@ -498,19 +585,26 @@
         </div>
 
         <!-- HISTORIAL -->
-        <div class="card">
-            <div class="card-title">📋 Historial (<span id="count">0</span>)</div>
-            <div id="historyList"></div>
+        <div class="history-card">
+            <div class="history-title">
+                <span>📋 Historial</span>
+                <span class="history-count" id="historyCount">0</span>
+            </div>
+            <div id="historyList">
+                <div class="empty-state">Sin registros aún</div>
+            </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwloBDsFGmEyByoRmMsKK3vFEqCl8PJYvwxRJ4_4IskcKMUgDFu7d2CEGVxUZPO_iXkwQ/exec';
+        // ==========================================
+        // CONFIGURACIÓN - REEMPLAZA CON TU URL
+        // ==========================================
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzihBt67-Q2R9-c64Kygb0LQJWze5pKg2rByvsXD7-mxQ2Ft8Z6Qp8Tf15GWcXUq6IWg/exec';
         
         let html5QrCode = null;
         let isScanning = false;
-        let currentCamera = 'environment'; // 'environment' = trasera, 'user' = frontal
+        let currentCamera = 'environment';
         let history = JSON.parse(localStorage.getItem('stickerHistory')) || [];
 
         // Inicializar
@@ -526,35 +620,35 @@
         });
 
         // ==========================================
-        // FUNCIONES DEL ESCÁNER - CORREGIDAS
+        // ESCANER - CORREGIDO Y MÁS GRANDE
         // ==========================================
         
-        async function toggleScan() {
+        async function toggleScanner() {
             if (isScanning) {
-                stopScan();
+                stopScanner();
                 return;
             }
 
-            const container = document.getElementById('scannerContainer');
+            const scannerBox = document.getElementById('scannerBox');
             const btn = document.getElementById('scanBtn');
-            const btnText = document.getElementById('scanText');
-            const controls = document.getElementById('scannerControls');
+            const btnText = document.getElementById('scanBtnText');
+            const controls = document.getElementById('scanControls');
 
             try {
-                // PRIMERO mostrar el contenedor (IMPORTANTE)
-                container.classList.add('active');
+                // MOSTRAR PRIMERO el contenedor
+                scannerBox.classList.add('active');
                 
-                // Pequeña espera para que el DOM se actualice
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Esperar a que el DOM renderice
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
-                // Crear instancia del escáner
+                // Crear instancia
                 html5QrCode = new Html5Qrcode("reader");
                 
-                // Configuración optimizada para códigos de barras
+                // Configuración para código de barras grande
                 const config = {
                     fps: 10,
-                    qrbox: { width: 280, height: 100 },
-                    aspectRatio: 2.5,
+                    qrbox: { width: 300, height: 120 }, // Área de escaneo más grande
+                    aspectRatio: 1.0,
                     disableFlip: false,
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.CODE_128,
@@ -568,7 +662,7 @@
                     ]
                 };
 
-                // Iniciar cámara
+                // Iniciar
                 await html5QrCode.start(
                     { facingMode: currentCamera },
                     config,
@@ -576,184 +670,166 @@
                     onScanFailure
                 );
 
-                // Éxito - actualizar UI
                 isScanning = true;
                 btn.classList.add('scanning');
-                btnText.textContent = 'Detener Cámara';
+                btnText.textContent = '⏹ Detener Cámara';
                 controls.classList.add('active');
                 
-                showToast('📷 Cámara activada. Apunta al código de barras', 'info');
+                showToast('📷 Apunta el código de barras al recuadro verde', 'info');
 
             } catch (err) {
-                console.error('Error al iniciar cámara:', err);
+                console.error('Error:', err);
+                scannerBox.classList.remove('active');
                 
-                // Ocultar contenedor si falla
-                container.classList.remove('active');
+                let msg = 'Error al iniciar cámara';
+                if (err.name === 'NotAllowedError') msg = '❌ Permiso denegado. Habilita cámara en configuración';
+                else if (err.name === 'NotFoundError') msg = '❌ No se encontró cámara';
+                else if (err.name === 'NotReadableError') msg = '❌ Cámara en uso por otra app';
                 
-                let errorMsg = 'Error al acceder a la cámara';
-                
-                if (err.name === 'NotAllowedError') {
-                    errorMsg = '❌ Permiso de cámara denegado. Habilita permisos en configuración.';
-                } else if (err.name === 'NotFoundError') {
-                    errorMsg = '❌ No se encontró cámara disponible';
-                } else if (err.name === 'NotReadableError') {
-                    errorMsg = '❌ La cámara está siendo usada por otra app';
-                }
-                
-                showToast(errorMsg, 'error');
+                showToast(msg, 'error');
             }
         }
 
-        function stopScan() {
-            const container = document.getElementById('scannerContainer');
+        function stopScanner() {
+            const scannerBox = document.getElementById('scannerBox');
             const btn = document.getElementById('scanBtn');
-            const btnText = document.getElementById('scanText');
-            const controls = document.getElementById('scannerControls');
+            const btnText = document.getElementById('scanBtnText');
+            const controls = document.getElementById('scanControls');
 
             if (html5QrCode && isScanning) {
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
-                    console.log('Escáner detenido');
-                }).catch(err => {
-                    console.error('Error al detener:', err);
-                });
+                }).catch(() => {});
             }
 
             isScanning = false;
-            container.classList.remove('active');
+            scannerBox.classList.remove('active');
             btn.classList.remove('scanning');
-            btnText.textContent = 'Iniciar Cámara';
+            btnText.textContent = '📷 Iniciar Cámara';
             controls.classList.remove('active');
         }
 
         async function switchCamera() {
             if (!isScanning) return;
-            
-            // Detener actual
-            stopScan();
-            
-            // Cambiar cámara
+            stopScanner();
             currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
-            
-            // Esperar un poco y reiniciar
-            setTimeout(() => {
-                toggleScan();
-            }, 500);
-            
-            showToast(`🔄 Cambiando a cámara ${currentCamera === 'environment' ? 'trasera' : 'frontal'}...`, 'info');
+            setTimeout(toggleScanner, 500);
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log('Código detectado:', decodedText);
-            
-            // Evitar duplicados inmediatos
-            const lastCode = document.getElementById('codigoBarras').value;
-            if (lastCode === decodedText) return;
-            
-            // Actualizar campos
+        function onScanSuccess(decodedText) {
             const input = document.getElementById('codigoBarras');
+            if (input.value === decodedText) return; // Evitar duplicados
+            
             input.value = decodedText;
             input.classList.add('scanned');
             
-            // Mostrar resultado
-            document.getElementById('resultCode').textContent = decodedText;
+            document.getElementById('scannedCode').textContent = decodedText;
             document.getElementById('scanResult').classList.add('show');
             
-            // Actualizar preview del sticker
             updatePreview();
-            
-            // Notificación
             showToast(`✅ Código: ${decodedText}`, 'success');
             
-            // Vibración en móvil
-            if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
-            }
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             
-            // Auto-focus al siguiente campo
-            setTimeout(() => {
-                document.getElementById('codigoCliente').focus();
-            }, 300);
-            
-            // Opcional: detener escáner después de leer
-            // setTimeout(stopScan, 1000);
+            setTimeout(() => document.getElementById('codigoCliente').focus(), 300);
         }
 
-        function onScanFailure(error) {
-            // Ignorar errores normales de escaneo
-        }
+        function onScanFailure() {}
 
         // ==========================================
         // PREVIEW Y FORMULARIO
         // ==========================================
         
         function updatePreview() {
-            const getVal = (id, def) => document.getElementById(id)?.value || def;
+            const get = (id, def) => document.getElementById(id)?.value || def;
             
-            document.getElementById('previewBarcode').textContent = getVal('codigoBarras', '10016026559322');
-            document.getElementById('previewCiclo').textContent = getVal('ciclo', '05');
-            document.getElementById('previewSector').textContent = getVal('sector', '0280');
-            document.getElementById('previewNombre').textContent = getVal('nombreCliente', 'MARIA FERNANDA CARDONA OCAMPO').toUpperCase();
-            document.getElementById('previewDireccion').innerHTML = getVal('direccionCliente', 'KR 40 # 20 DB-36-CASTROPOL\nCASA SEGUNDO PISO-CANCHA DE POLVO').replace(/\n/g, '<br>');
-            document.getElementById('previewCiudad').textContent = 'MEDELLIN';
-            document.getElementById('previewTel').textContent = getVal('telefono', '3148228973');
-            document.getElementById('previewCajas').textContent = getVal('cajas', '2');
-            document.getElementById('previewCB').textContent = getVal('codigoCliente', '440651');
+            document.getElementById('previewBarcode').textContent = get('codigoBarras', '10016026559322');
+            document.getElementById('previewCiclo').textContent = get('ciclo', '05');
+            document.getElementById('previewSector').textContent = get('sector', '0280');
+            document.getElementById('previewNombre').textContent = get('nombreCliente', 'MARIA FERNANDA CARDONA OCAMPO').toUpperCase();
+            document.getElementById('previewDireccion').innerHTML = get('direccionCliente', 'KR 40 # 20 DB-36-CASTROPOL\nCASA SEGUNDO PISO-CANCHA DE POLVO').replace(/\n/g, '<br>');
+            document.getElementById('previewTel').textContent = get('telefono', '3148228973');
+            document.getElementById('previewCajas').textContent = get('cajas', '2');
+            document.getElementById('previewCB').textContent = get('codigoCliente', '440651');
         }
 
-        // Envío a Google Sheets
-        document.getElementById('mainForm').addEventListener('submit', async (e) => {
+        // ==========================================
+        // ENVÍO A GOOGLE SHEETS - CORREGIDO
+        // ==========================================
+        
+        document.getElementById('dataForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
             
+            // Recoger datos
             const data = {
-                codigoBarras: document.getElementById('codigoBarras').value,
-                codigoCliente: document.getElementById('codigoCliente').value,
-                nombreCliente: document.getElementById('nombreCliente').value,
-                direccionCliente: document.getElementById('direccionCliente').value,
-                telefono: document.getElementById('telefono').value,
-                ciclo: document.getElementById('ciclo').value,
-                sector: document.getElementById('sector').value,
-                cajas: document.getElementById('cajas').value,
-                fecha: new Date().toLocaleString('es-CO')
+                codigoBarras: document.getElementById('codigoBarras').value.trim(),
+                codigoCliente: document.getElementById('codigoCliente').value.trim(),
+                nombreCliente: document.getElementById('nombreCliente').value.trim(),
+                direccionCliente: document.getElementById('direccionCliente').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                ciclo: document.getElementById('ciclo').value.trim(),
+                sector: document.getElementById('sector').value.trim(),
+                cajas: document.getElementById('cajas').value.trim(),
+                fecha: new Date().toLocaleString('es-CO'),
+                timestamp: new Date().toISOString()
             };
 
-            // Validación
+            // Validar campos obligatorios
             if (!data.codigoBarras || !data.codigoCliente || !data.nombreCliente || !data.direccionCliente) {
-                showToast('⚠️ Completa todos los campos obligatorios (*)', 'error');
+                showToast('⚠️ Completa los campos obligatorios (*)', 'error');
+                
+                // Resaltar campos vacíos
+                if (!data.codigoBarras) document.getElementById('codigoBarras').style.borderColor = '#ff4757';
+                if (!data.codigoCliente) document.getElementById('codigoCliente').style.borderColor = '#ff4757';
+                if (!data.nombreCliente) document.getElementById('nombreCliente').style.borderColor = '#ff4757';
+                if (!data.direccionCliente) document.getElementById('direccionCliente').style.borderColor = '#ff4757';
+                
+                setTimeout(() => {
+                    document.querySelectorAll('input').forEach(i => i.style.borderColor = '');
+                }, 3000);
+                
                 return;
             }
 
             // Loading
             btn.disabled = true;
-            btn.textContent = '⏳ Enviando...';
+            btn.innerHTML = '<span class="spinner"></span> Enviando...';
             
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
+                // Enviar a Google Sheets
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify(data)
                 });
 
-                // Guardar en historial
+                console.log('Respuesta:', response);
+                
+                // Guardar en historial local
                 history.unshift(data);
-                if (history.length > 20) history.pop();
+                if (history.length > 30) history.pop();
                 localStorage.setItem('stickerHistory', JSON.stringify(history));
                 updateHistory();
 
-                showToast('✅ ¡Enviado a Google Sheets!', 'success');
+                showToast('✅ ¡Datos guardados en Google Sheets!', 'success');
                 
-                // Limpiar formulario
-                clearForm();
+                // Limpiar formulario después de 1 segundo
+                setTimeout(() => {
+                    clearForm();
+                }, 1000);
                 
-            } catch (err) {
-                console.error(err);
-                showToast('❌ Error al enviar. Intenta de nuevo.', 'error');
+            } catch (error) {
+                console.error('Error completo:', error);
+                showToast('❌ Error: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = '📤 Enviar a Google Sheets';
+                btn.innerHTML = originalText;
             }
         });
 
@@ -761,37 +837,37 @@
             document.getElementById('codigoBarras').value = '10016026559322';
             document.getElementById('codigoCliente').value = '440651';
             document.getElementById('nombreCliente').value = 'Maria Fernanda Cardona Ocampo';
-            document.getElementById('direccionCliente').value = 'KR 40 # 20 DB-36-CASTROPOL, Casa segundo piso';
+            document.getElementById('direccionCliente').value = 'KR 40 # 20 DB-36-CASTROPOL, Casa segundo piso-cancha de polvo';
             document.getElementById('telefono').value = '3148228973';
             document.getElementById('ciclo').value = '05';
             document.getElementById('sector').value = '0280';
             document.getElementById('cajas').value = '2';
             document.getElementById('codigoBarras').classList.add('scanned');
             updatePreview();
-            showToast('📝 Datos de ejemplo cargados', 'info');
+            showToast('📝 Ejemplo cargado', 'info');
         }
 
         function clearForm() {
-            document.getElementById('mainForm').reset();
+            document.getElementById('dataForm').reset();
             document.getElementById('codigoBarras').classList.remove('scanned');
             document.getElementById('scanResult').classList.remove('show');
             updatePreview();
         }
 
         function updateHistory() {
-            document.getElementById('count').textContent = history.length;
+            document.getElementById('historyCount').textContent = history.length;
             const list = document.getElementById('historyList');
             
             if (history.length === 0) {
-                list.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Sin registros aún</div>';
+                list.innerHTML = '<div class="empty-state">Sin registros aún</div>';
                 return;
             }
             
             list.innerHTML = history.map(h => `
                 <div class="history-item">
                     <div class="history-code">${h.codigoBarras}</div>
-                    <div>${h.nombreCliente} • CB: ${h.codigoCliente}</div>
-                    <div style="color:#999;font-size:11px;">${h.fecha}</div>
+                    <div style="color: #555; margin: 2px 0;">${h.nombreCliente}</div>
+                    <div style="color: #999; font-size: 11px;">CB: ${h.codigoCliente} • ${h.fecha}</div>
                 </div>
             `).join('');
         }
@@ -800,7 +876,7 @@
             const t = document.getElementById('toast');
             t.textContent = msg;
             t.className = 'toast ' + type + ' show';
-            setTimeout(() => t.classList.remove('show'), 3000);
+            setTimeout(() => t.classList.remove('show'), type === 'error' ? 5000 : 3000);
         }
     </script>
 </body>
