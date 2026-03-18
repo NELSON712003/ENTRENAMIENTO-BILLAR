@@ -594,7 +594,7 @@
 
     <script>
         // CONFIGURACIÓN
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/TU_ID_DE_SCRIPT/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwloBDsFGmEyByoRmMsKK3vFEqCl8PJYvwxRJ4_4IskcKMUgDFu7d2CEGVxUZPO_iXkwQ/exec';
         
         let html5QrCode;
         let isScanning = false;
