@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Marcador - Billar Profesional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #16213e;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            color: #e94560;
+        }
+
+        .player-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-player-count {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .btn-player-count:hover, .btn-player-count.active {
+            background: #e94560;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        /* Player Columns */
+        .players-left, .players-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 20%;
+            min-width: 200px;
+        }
+
+        .player-card {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 15px;
+            border: 3px solid #0f3460;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .player-card.active {
+            border-color: #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .player-card.yellow-theme {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border-color: #d68910;
+        }
+
+        .player-card.white-theme {
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+            color: #2c3e50;
+            border-color: #95a5a6;
+        }
+
+        .player-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        .player-score {
+            font-size: 5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .player-score:active {
+            transform: scale(0.95);
+        }
+
+        .score-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .score-btn {
+            width: 40px;
+            height: 35px;
+            border: none;
+            border-radius: 5px;
+            background: #e94560;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-btn:hover {
+            background: #ff6b6b;
+            transform: scale(1.1);
+        }
+
+        .score-btn.minus {
+            background: #c0392b;
+        }
+
+        /* Center Camera View */
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .camera-container {
+            flex: 1;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid #0f3460;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #0f3460;
+            font-size: 1.5em;
+        }
+
+        /* Timeline Slider */
+        .timeline-container {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+        }
+
+        .timeline-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .timeline-slider {
+            width: 100%;
+            height: 40px;
+            -webkit-appearance: none;
+            background: #0f3460;
+            border-radius: 20px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .timeline-slider::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        /* Footer Controls */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+            gap: 20px;
+        }
+
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .timer-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #e94560;
+            font-family: 'Courier New', monospace;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .timer-display.warning {
+            animation: pulse 1s infinite;
+            color: #f39c12;
+        }
+
+        .timer-display.danger {
+            animation: pulse 0.5s infinite;
+            color: #c0392b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .controls-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .btn-start {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .btn-start:hover {
+            background: #2ecc71;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+
+        .btn-sound {
+            background: #3498db;
+            color: #fff;
+            padding: 15px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-sound.muted {
+            background: #7f8c8d;
+        }
+
+        .clock-display {
+            font-size: 1.5em;
+            color: #aaa;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #16213e;
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #e94560;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.yes {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .modal-btn.no {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hidden state */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .player-score {
+                font-size: 3em;
+            }
+            .score-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏆 SISTEMA DE MARCADOR - BILLAR</h1>
+            <div class="player-selector">
+                <button class="btn-player-count active" onclick="setPlayerCount(2)">2 Jugadores</button>
+                <button class="btn-player-count" onclick="setPlayerCount(3)">3 Jugadores</button>
+                <button class="btn-player-count" onclick="setPlayerCount(4)">4 Jugadores</button>
+                <button class="btn-player-count" onclick="setPlayerCount(5)">5 Jugadores</button>
+                <button class="btn-player-count" onclick="setPlayerCount(6)">6 Jugadores</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Players -->
+            <div class="players-left" id="playersLeft">
+                <!-- Players 1-3 -->
+            </div>
+
+            <!-- Center Panel -->
+            <div class="center-panel">
+                <div class="camera-container">
+                    <div class="camera-placeholder" id="cameraPlaceholder">
+                        <div>
+                            <div style="font-size: 3em; margin-bottom: 20px;">📹</div>
+                            <div>Esperando señal de cámara...</div>
+                            <div style="font-size: 0.7em; margin-top: 10px; color: #666;">
+                                (Buffer de 20 jugadas / 40 min)
+                            </div>
+                        </div>
+                    </div>
+                    <video class="camera-feed hidden" id="cameraFeed" autoplay muted></video>
+                    <canvas class="camera-feed hidden" id="replayCanvas"></canvas>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-container">
+                    <div class="timeline-label">
+                        <span>⏮️ Replay (-10s delay)</span>
+                        <span id="timelineValue">Tiempo Real</span>
+                    </div>
+                    <input type="range" class="timeline-slider" id="timelineSlider" 
+                           min="0" max="100" value="100" disabled>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <div class="stat-label">Jugadas Guardadas</div>
+                        <div class="stat-value" id="savedPlays">0/20</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Tiempo Grabación</div>
+                        <div class="stat-value" id="recTime">00:00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Jugada Actual</div>
+                        <div class="stat-value" id="currentPlay">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Players -->
+            <div class="players-right" id="playersRight">
+                <!-- Players 4-6 -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="timer-section">
+                <div class="timer-display" id="shotTimer">40</div>
+                <div class="clock-display" id="clock">00:00:00</div>
+            </div>
+
+            <div class="controls-section">
+                <button class="control-btn btn-sound" id="soundBtn" onclick="toggleSound()">
+                    🔊
+                </button>
+                <button class="control-btn btn-start" id="startBtn" onclick="startGame()">
+                    ▶️ Inicio Jugada
+                </button>
+                <button class="control-btn btn-reset" onclick="showResetModal()">
+                    🔄 Reiniciar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal-content">
+            <h2>¿Reiniciar Juego?</h2>
+            <p>Se borrarán todos los puntos y la memoria de grabación. ¿Estás seguro?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn yes" onclick="confirmReset()">Sí</button>
+                <button class="modal-btn no" onclick="hideResetModal()">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let playerCount = 2;
+        let players = [];
+        let timerInterval = null;
+        let shotTime = 40;
+        let isTimerRunning = false;
+        let soundEnabled = true;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let savedPlays = [];
+        let currentPlayIndex = 0;
+        let stream = null;
+
+        // Audio Context for beep
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playBeep(frequency = 800, duration = 200, type = 'square') {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function playWarningSound() {
+            playBeep(600, 100, 'sine');
+            setTimeout(() => playBeep(600, 100, 'sine'), 150);
+        }
+
+        function playFinalSound() {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => playBeep(400, 300, 'sawtooth'), i * 350);
+            }
+        }
+
+        // Initialize Players
+        function initPlayers() {
+            players = [];
+            for (let i = 1; i <= 6; i++) {
+                players.push({
+                    id: i,
+                    score: 0,
+                    active: i <= playerCount
+                });
+            }
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const leftContainer = document.getElementById('playersLeft');
+            const rightContainer = document.getElementById('playersRight');
+            
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            players.forEach((player, index) => {
+                if (!player.active) return;
+                
+                const isLeft = index < 3;
+                const theme = index % 2 === 0 ? 'yellow-theme' : 'white-theme';
+                
+                const card = document.createElement('div');
+                card.className = `player-card ${theme}`;
+                card.innerHTML = `
+                    <div class="player-number">Jugador ${player.id}</div>
+                    <div class="player-score" onclick="changeScore(${player.id}, 1)">${player.score}</div>
+                    <div class="score-controls">
+                        <button class="score-btn" onclick="changeScore(${player.id}, 1)">+1</button>
+                        <button class="score-btn" onclick="changeScore(${player.id}, 2)">+2</button>
+                        <button class="score-btn" onclick="changeScore(${player.id}, 3)">+3</button>
+                        <button class="score-btn" onclick="changeScore(${player.id}, 4)">+4</button>
+                        <button class="score-btn minus" onclick="changeScore(${player.id}, -1)">-1</button>
+                    </div>
+                `;
+                
+                if (isLeft) {
+                    leftContainer.appendChild(card);
+                } else {
+                    rightContainer.appendChild(card);
+                }
+            });
+        }
+
+        function setPlayerCount(count) {
+            playerCount = count;
+            
+            // Update buttons
+            document.querySelectorAll('.btn-player-count').forEach((btn, index) => {
+                btn.classList.toggle('active', index + 2 === count);
+            });
+            
+            initPlayers();
+        }
+
+        function changeScore(playerId, delta) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            const newScore = player.score + delta;
+            if (newScore >= 0 && newScore <= 300) {
+                player.score = newScore;
+                renderPlayers();
+                playBeep(1000, 50, 'sine');
+            }
+        }
+
+        // Timer Functions
+        function startTimer() {
+            if (isTimerRunning) return;
+            
+            isTimerRunning = true;
+            shotTime = 40;
+            updateTimerDisplay();
+            
+            document.getElementById('startBtn').textContent = '⏸️ Pausar';
+            document.getElementById('startBtn').onclick = pauseGame;
+            
+            timerInterval = setInterval(() => {
+                shotTime--;
+                updateTimerDisplay();
+                
+                if (shotTime === 10) {
+                    playWarningSound();
+                    document.getElementById('shotTimer').classList.add('warning');
+                }
+                
+                if (shotTime <= 5 && shotTime > 0) {
+                    playBeep(800, 100);
+                }
+                
+                if (shotTime <= 0) {
+                    playFinalSound();
+                    pauseGame();
+                    document.getElementById('shotTimer').classList.add('danger');
+                }
+            }, 1000);
+        }
+
+        function pauseGame() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('startBtn').textContent = '▶️ Continuar';
+            document.getElementById('startBtn').onclick = startTimer;
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('shotTimer');
+            display.textContent = shotTime;
+            
+            if (shotTime > 10) {
+                display.classList.remove('warning', 'danger');
+            }
+        }
+
+        function startGame() {
+            // Reset and start fresh
+            shotTime = 40;
+            document.getElementById('shotTimer').classList.remove('warning', 'danger');
+            updateTimerDisplay();
+            
+            // Clear previous recordings
+            savedPlays = [];
+            updateStats();
+            
+            // Start camera recording
+            startRecording();
+            
+            startTimer();
+        }
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', { hour12: false });
+            document.getElementById('clock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Sound Toggle
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.classList.toggle('muted', !soundEnabled);
+        }
+
+        // Modal Functions
+        function showResetModal() {
+            document.getElementById('resetModal').classList.add('active');
+            if (isTimerRunning) pauseGame();
+        }
+
+        function hideResetModal() {
+            document.getElementById('resetModal').classList.remove('active');
+        }
+
+        function confirmReset() {
+            // Reset all scores
+            players.forEach(p => p.score = 0);
+            renderPlayers();
+            
+            // Reset timer
+            shotTime = 40;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('shotTimer').classList.remove('warning', 'danger');
+            updateTimerDisplay();
+            document.getElementById('startBtn').textContent = '▶️ Inicio Jugada';
+            document.getElementById('startBtn').onclick = startGame;
+            
+            // Clear recordings
+            savedPlays = [];
+            updateStats();
+            stopRecording();
+            
+            // Reset timeline
+            document.getElementById('timelineSlider').value = 100;
+            document.getElementById('timelineSlider').disabled = true;
+            document.getElementById('timelineValue').textContent = 'Tiempo Real';
+            
+            hideResetModal();
+            playBeep(600, 200);
+        }
+
+        // Camera and Recording
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 }, 
+                    audio: false 
+                });
+                
+                const video = document.getElementById('cameraFeed');
+                video.srcObject = stream;
+                
+                document.getElementById('cameraPlaceholder').classList.add('hidden');
+                video.classList.remove('hidden');
+                
+                setupTimeline();
+            } catch (err) {
+                console.log('Cámara no disponible:', err);
+            }
+        }
+
+        function startRecording() {
+            if (!stream) return;
+            
+            recordedChunks = [];
+            const options = { mimeType: 'video/webm;codecs=vp9' };
+            
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(stream);
+            }
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                    // Keep only last 40 minutes approx
+                    if (recordedChunks.length > 2400) { // ~40 min at 1sec chunks
+                        recordedChunks.shift();
+                    }
+                }
+            };
+            
+            mediaRecorder.start(1000); // Collect 1-second chunks
+            isRecording = true;
+            
+            // Enable timeline
+            document.getElementById('timelineSlider').disabled = false;
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+        }
+
+        function setupTimeline() {
+            const slider = document.getElementById('timelineSlider');
+            const video = document.getElementById('cameraFeed');
+            const canvas = document.getElementById('replayCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            slider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                const label = document.getElementById('timelineValue');
+                
+                if (value == 100) {
+                    label.textContent = 'Tiempo Real';
+                    video.classList.remove('hidden');
+                    canvas.classList.add('hidden');
+                } else {
+                    const secondsAgo = Math.floor((100 - value) / 2.5); // 0-40 seconds
+                    label.textContent = `-${secondsAgo + 10}s (delay)`;
+                    
+                    // Show frame from buffer (simulated)
+                    video.classList.add('hidden');
+                    canvas.classList.remove('hidden');
+                    
+                    // Draw current video frame to canvas (in real implementation, 
+                    // this would show buffered frame)
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Add overlay text
+                    ctx.fillStyle = 'rgba(233, 69, 96, 0.8)';
+                    ctx.fillRect(10, 10, 200, 30);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(`REPLAY: -${secondsAgo + 10}s`, 20, 32);
+                }
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('savedPlays').textContent = `${savedPlays.length}/20`;
+            
+            const minutes = Math.floor(recordedChunks.length / 60);
+            const seconds = recordedChunks.length % 60;
+            document.getElementById('recTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('currentPlay').textContent = 
+                savedPlays.length > 0 ? `#${savedPlays.length}` : '-';
+        }
+
+        // Update stats periodically
+        setInterval(updateStats, 1000);
+
+        // Initialize
+        initPlayers();
+        initCamera();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isTimerRunning) pauseGame();
+                else startGame();
+            }
+            if (e.code === 'KeyM') toggleSound();
+        });
+    </script>
+</body>
+</html>
