@@ -57,7 +57,7 @@
             align-items: center;
         }
 
-        /* INICIO JUEGO button - GREEN color, moved from footer to header */
+        /* INICIO JUEGO button - GREEN color */
         .btn-inicio-juego {
             padding: 10px 20px;
             border: none;
@@ -109,7 +109,7 @@
             min-width: 200px;
         }
 
-        /* Player Card - Fixed sizing for equal distribution */
+        /* Player Card */
         .player-card {
             background: #16213e;
             border-radius: 15px;
@@ -260,15 +260,15 @@
             color: #fff;
         }
 
-        /* Center Panel - Camera 1/3 width */
+        /* Center Panel - Camera ONLY, removed info panels */
         .center-panel {
             width: 33.33%;
             min-width: 250px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
         }
 
+        /* Camera container now takes full height */
         .camera-container {
             flex: 1;
             background: #000;
@@ -276,7 +276,7 @@
             overflow: hidden;
             position: relative;
             border: 3px solid #0f3460;
-            min-height: 200px;
+            min-height: 300px;
         }
 
         .camera-feed {
@@ -294,73 +294,12 @@
             justify-content: center;
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: #0f3460;
-            font-size: 1.1em;
+            font-size: 1.2em;
             text-align: center;
             padding: 20px;
         }
 
-        .camera-info {
-            background: #16213e;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid #0f3460;
-            text-align: center;
-        }
-
-        .camera-status-title {
-            font-size: 0.85em;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .camera-status-text {
-            font-size: 1em;
-            font-weight: bold;
-            color: #e94560;
-        }
-
-        .camera-status-text.connected {
-            color: #27ae60;
-        }
-
-        .camera-status-text.searching {
-            color: #f39c12;
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Stats Panel */
-        .stats-panel {
-            background: #16213e;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #0f3460;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.8em;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            color: #e94560;
-            font-weight: bold;
-        }
-
-        /* Footer Controls - Removed REINICIAR button from here */
+        /* Footer Controls */
         .footer {
             display: flex;
             justify-content: space-between;
@@ -548,13 +487,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header - INICIO JUEGO button moved here, 1 JUGADOR removed -->
+        <!-- Header -->
         <div class="header">
             <div class="header-left">
                 <h1>🏆 MESA 1</h1>
             </div>
             <div class="player-selector">
-                <!-- INICIO JUEGO button - GREEN color, was REINICIAR in footer -->
                 <button class="btn-inicio-juego" onclick="confirmResetFromHeader()">
                     🔄 INICIO JUEGO
                 </button>
@@ -573,7 +511,7 @@
                 <!-- Players 1, 3, 5 -->
             </div>
 
-            <!-- Center Panel - Camera Only -->
+            <!-- Center Panel - Camera ONLY, removed info panels -->
             <div class="center-panel">
                 <div class="camera-container">
                     <div class="camera-placeholder" id="cameraPlaceholder">
@@ -581,28 +519,6 @@
                         <div id="placeholderText">Buscando cámara externa...</div>
                     </div>
                     <video class="camera-feed hidden" id="cameraFeed" autoplay muted playsinline></video>
-                </div>
-
-                <!-- Camera Status Info -->
-                <div class="camera-info">
-                    <div class="camera-status-title">📹 ESTADO DE CÁMARA</div>
-                    <div class="camera-status-text searching" id="cameraStatus">Buscando...</div>
-                </div>
-
-                <!-- Stats -->
-                <div class="stats-panel">
-                    <div class="stat-item">
-                        <div class="stat-label">Jugadores</div>
-                        <div class="stat-value" id="playerCountDisplay">2</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Turno</div>
-                        <div class="stat-value" id="currentTurn">-</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Estado</div>
-                        <div class="stat-value" id="gameStatus">Listo</div>
-                    </div>
                 </div>
             </div>
 
@@ -612,7 +528,7 @@
             </div>
         </div>
 
-        <!-- Footer - REINICIAR button removed from here -->
+        <!-- Footer -->
         <div class="footer">
             <div class="timer-section">
                 <div class="timer-display" id="shotTimer">40</div>
@@ -620,7 +536,6 @@
             </div>
 
             <div class="controls-section">
-                <!-- TIEMPO JUGADOR button - RED color -->
                 <button class="control-btn btn-tiempo" id="btnTiempo" onclick="startGame()">
                     ⏱️ TIEMPO JUGADOR
                 </button>
@@ -698,7 +613,6 @@
                 });
             }
             renderPlayers();
-            updateStats();
         }
 
         function renderPlayers() {
@@ -785,15 +699,15 @@
         }
 
         async function findAndConnectCamera() {
-            updateCameraStatus('Buscando cámaras...', 'searching');
+            const placeholderText = document.getElementById('placeholderText');
+            if (placeholderText) placeholderText.textContent = 'Buscando cámara...';
             
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
                 if (videoDevices.length === 0) {
-                    updateCameraStatus('No se encontraron cámaras', 'error');
-                    document.getElementById('placeholderText').textContent = 'No hay cámaras disponibles';
+                    if (placeholderText) placeholderText.textContent = 'No hay cámaras disponibles';
                     return;
                 }
 
@@ -830,12 +744,6 @@
                         video.classList.remove('hidden');
                         
                         currentCameraLabel = device.label || 'Cámara desconocida';
-                        const isExternal = isExternalCamera(device.label);
-                        
-                        updateCameraStatus(
-                            `${isExternal ? 'Externa' : 'Interna'}: ${currentCameraLabel.substring(0, 25)}${currentCameraLabel.length > 25 ? '...' : ''}`, 
-                            'connected'
-                        );
                         
                         playBeep(800, 100, 'sine');
                         return;
@@ -846,12 +754,11 @@
                     }
                 }
                 
-                updateCameraStatus('Error al conectar cámaras', 'error');
-                document.getElementById('placeholderText').textContent = 'Error de conexión';
+                if (placeholderText) placeholderText.textContent = 'Error de conexión';
                 
             } catch (err) {
                 console.error('Error enumerando dispositivos:', err);
-                updateCameraStatus('Error de acceso', 'error');
+                if (placeholderText) placeholderText.textContent = 'Error de acceso';
                 tryBasicCamera();
             }
         }
@@ -869,19 +776,12 @@
                 document.getElementById('cameraPlaceholder').classList.add('hidden');
                 video.classList.remove('hidden');
                 
-                updateCameraStatus('Cámara por defecto activa', 'connected');
                 playBeep(800, 100, 'sine');
                 
             } catch (err) {
-                updateCameraStatus('Sin acceso a cámara', 'error');
-                document.getElementById('placeholderText').textContent = 'Permiso denegado';
+                const placeholderText = document.getElementById('placeholderText');
+                if (placeholderText) placeholderText.textContent = 'Permiso denegado';
             }
-        }
-
-        function updateCameraStatus(message, type) {
-            const status = document.getElementById('cameraStatus');
-            status.textContent = message;
-            status.className = 'camera-status-text ' + type;
         }
 
         // Timer Functions
@@ -891,7 +791,6 @@
             isTimerRunning = true;
             shotTime = 40;
             updateTimerDisplay();
-            updateGameStatus('Jugando');
             
             document.getElementById('btnTiempo').textContent = '⏸️ PAUSAR';
             document.getElementById('btnTiempo').onclick = pauseGame;
@@ -926,7 +825,6 @@
             clearInterval(timerInterval);
             document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
             document.getElementById('btnTiempo').onclick = startTimer;
-            updateGameStatus('Pausado');
         }
 
         function updateTimerDisplay() {
@@ -973,7 +871,6 @@
             document.getElementById('resetModal').classList.remove('active');
         }
 
-        // Function called from header button INICIO JUEGO
         function confirmResetFromHeader() {
             showResetModal();
         }
@@ -989,18 +886,9 @@
             updateTimerDisplay();
             document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
             document.getElementById('btnTiempo').onclick = startGame;
-            updateGameStatus('Listo');
             
             hideResetModal();
             playBeep(600, 200);
-        }
-
-        function updateStats() {
-            document.getElementById('playerCountDisplay').textContent = playerCount;
-        }
-
-        function updateGameStatus(status) {
-            document.getElementById('gameStatus').textContent = status;
         }
 
         // Initialize
