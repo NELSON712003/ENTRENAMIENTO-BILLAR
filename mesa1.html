@@ -51,11 +51,18 @@
             color: #e94560;
         }
 
-        .btn-start-top {
-            padding: 10px 25px;
+        .player-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* INICIO JUEGO button - GREEN color, moved from footer to header */
+        .btn-inicio-juego {
+            padding: 10px 20px;
             border: none;
             border-radius: 8px;
-            background: #27ae60;
+            background: #2ecc71;
             color: #fff;
             cursor: pointer;
             font-size: 1em;
@@ -64,14 +71,9 @@
             text-transform: uppercase;
         }
 
-        .btn-start-top:hover {
-            background: #2ecc71;
+        .btn-inicio-juego:hover {
+            background: #27ae60;
             transform: scale(1.05);
-        }
-
-        .player-selector {
-            display: flex;
-            gap: 10px;
         }
 
         .btn-player-count {
@@ -98,7 +100,7 @@
             min-height: 0;
         }
 
-        /* Player Columns */
+        /* Player Columns - Equal width distribution */
         .players-left, .players-right {
             display: flex;
             flex-direction: column;
@@ -107,6 +109,7 @@
             min-width: 200px;
         }
 
+        /* Player Card - Fixed sizing for equal distribution */
         .player-card {
             background: #16213e;
             border-radius: 15px;
@@ -120,6 +123,8 @@
             position: relative;
             transition: all 0.3s;
             min-height: 0;
+            height: 100%;
+            max-height: 100%;
         }
 
         .player-card.active {
@@ -152,6 +157,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            min-height: 0;
         }
 
         .player-score {
@@ -176,17 +182,18 @@
             margin-top: 15px;
             padding-top: 15px;
             border-top: 2px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
 
         .score-btn {
             flex: 1;
-            min-width: 40px;
-            height: 45px;
+            min-width: 35px;
+            height: 40px;
             border: none;
             border-radius: 8px;
             background: #0f3460;
             color: #fff;
-            font-size: 1.3em;
+            font-size: 1.2em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
@@ -353,7 +360,7 @@
             font-weight: bold;
         }
 
-        /* Footer Controls */
+        /* Footer Controls - Removed REINICIAR button from here */
         .footer {
             display: flex;
             justify-content: space-between;
@@ -412,13 +419,15 @@
             text-transform: uppercase;
         }
 
-        .btn-reset {
+        /* TIEMPO JUGADOR button - RED color */
+        .btn-tiempo {
             background: #e74c3c;
             color: #fff;
         }
 
-        .btn-reset:hover {
+        .btn-tiempo:hover {
             background: #c0392b;
+            transform: translateY(-2px);
         }
 
         .btn-sound {
@@ -516,8 +525,9 @@
                 font-size: 4em;
             }
             .score-btn {
-                height: 40px;
+                height: 35px;
                 font-size: 1.1em;
+                min-width: 30px;
             }
         }
 
@@ -526,9 +536,9 @@
                 font-size: 3em;
             }
             .score-btn {
-                height: 35px;
+                height: 30px;
                 font-size: 1em;
-                min-width: 35px;
+                min-width: 28px;
             }
             .center-panel {
                 min-width: 200px;
@@ -538,20 +548,21 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header with Start Button -->
+        <!-- Header - INICIO JUEGO button moved here, 1 JUGADOR removed -->
         <div class="header">
             <div class="header-left">
                 <h1>🏆 MESA 1</h1>
-                <button class="btn-start-top" id="startBtnTop" onclick="startGame()">
-                    ▶️ Inicio Jugada
-                </button>
             </div>
             <div class="player-selector">
-                <button class="btn-player-count active" onclick="setPlayerCount(2)">2 Jugadores</button>
-                <button class="btn-player-count" onclick="setPlayerCount(3)">3 Jugadores</button>
-                <button class="btn-player-count" onclick="setPlayerCount(4)">4 Jugadores</button>
-                <button class="btn-player-count" onclick="setPlayerCount(5)">5 Jugadores</button>
-                <button class="btn-player-count" onclick="setPlayerCount(6)">6 Jugadores</button>
+                <!-- INICIO JUEGO button - GREEN color, was REINICIAR in footer -->
+                <button class="btn-inicio-juego" onclick="confirmResetFromHeader()">
+                    🔄 INICIO JUEGO
+                </button>
+                <button class="btn-player-count" onclick="setPlayerCount(2)">2 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(3)">3 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(4)">4 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(5)">5 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(6)">6 JUGADOR</button>
             </div>
         </div>
 
@@ -559,7 +570,7 @@
         <div class="main-content">
             <!-- Left Players -->
             <div class="players-left" id="playersLeft">
-                <!-- Players 1-3 -->
+                <!-- Players 1, 3, 5 -->
             </div>
 
             <!-- Center Panel - Camera Only -->
@@ -597,11 +608,11 @@
 
             <!-- Right Players -->
             <div class="players-right" id="playersRight">
-                <!-- Players 4-6 -->
+                <!-- Players 2, 4, 6 -->
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer - REINICIAR button removed from here -->
         <div class="footer">
             <div class="timer-section">
                 <div class="timer-display" id="shotTimer">40</div>
@@ -609,8 +620,9 @@
             </div>
 
             <div class="controls-section">
-                <button class="control-btn btn-reset" onclick="showResetModal()">
-                    🔄 Reiniciar
+                <!-- TIEMPO JUGADOR button - RED color -->
+                <button class="control-btn btn-tiempo" id="btnTiempo" onclick="startGame()">
+                    ⏱️ TIEMPO JUGADOR
                 </button>
                 <button class="control-btn btn-sound" id="soundBtn" onclick="toggleSound()">
                     🔊
@@ -696,11 +708,11 @@
             leftContainer.innerHTML = '';
             rightContainer.innerHTML = '';
 
-            players.forEach((player, index) => {
+            players.forEach((player) => {
                 if (!player.active) return;
                 
-                const isLeft = index < 3;
-                const theme = index % 2 === 0 ? 'yellow-theme' : 'white-theme';
+                const isLeft = player.id % 2 === 1;
+                const theme = (player.id - 1) % 2 === 0 ? 'yellow-theme' : 'white-theme';
                 
                 const card = document.createElement('div');
                 card.className = `player-card ${theme}`;
@@ -729,8 +741,9 @@
         function setPlayerCount(count) {
             playerCount = count;
             
-            document.querySelectorAll('.btn-player-count').forEach((btn, index) => {
-                btn.classList.toggle('active', index + 2 === count);
+            document.querySelectorAll('.btn-player-count').forEach((btn) => {
+                const btnNumber = parseInt(btn.textContent);
+                btn.classList.toggle('active', btnNumber === count);
             });
             
             initPlayers();
@@ -748,11 +761,10 @@
             }
         }
 
-        // Camera Functions - Auto detect external first
+        // Camera Functions
         function isExternalCamera(label) {
             if (!label) return false;
             const lowerLabel = label.toLowerCase();
-            // Keywords that indicate external/USB/WiFi cameras
             const externalKeywords = [
                 'usb', 'hdmi', 'capture', 'webcam', 'cam link', 
                 'elgato', 'avermedia', 'blackmagic', 'magewell',
@@ -776,7 +788,6 @@
             updateCameraStatus('Buscando cámaras...', 'searching');
             
             try {
-                // Get all video devices
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
@@ -786,7 +797,6 @@
                     return;
                 }
 
-                // Sort cameras: External first, then internal
                 const sortedDevices = videoDevices.sort((a, b) => {
                     const aExternal = isExternalCamera(a.label);
                     const bExternal = isExternalCamera(b.label);
@@ -800,7 +810,6 @@
                     return 0;
                 });
 
-                // Try to connect to the first available camera (preferably external)
                 for (const device of sortedDevices) {
                     try {
                         const constraints = {
@@ -833,19 +842,16 @@
                         
                     } catch (err) {
                         console.log(`Error con ${device.label}:`, err);
-                        continue; // Try next camera
+                        continue;
                     }
                 }
                 
-                // If we get here, no camera could be connected
                 updateCameraStatus('Error al conectar cámaras', 'error');
                 document.getElementById('placeholderText').textContent = 'Error de conexión';
                 
             } catch (err) {
                 console.error('Error enumerando dispositivos:', err);
                 updateCameraStatus('Error de acceso', 'error');
-                
-                // Fallback: try basic getUserMedia without device selection
                 tryBasicCamera();
             }
         }
@@ -887,8 +893,8 @@
             updateTimerDisplay();
             updateGameStatus('Jugando');
             
-            document.getElementById('startBtnTop').textContent = '⏸️ Pausar';
-            document.getElementById('startBtnTop').onclick = pauseGame;
+            document.getElementById('btnTiempo').textContent = '⏸️ PAUSAR';
+            document.getElementById('btnTiempo').onclick = pauseGame;
             
             timerInterval = setInterval(() => {
                 shotTime--;
@@ -918,8 +924,8 @@
         function pauseGame() {
             isTimerRunning = false;
             clearInterval(timerInterval);
-            document.getElementById('startBtnTop').textContent = '▶️ Continuar';
-            document.getElementById('startBtnTop').onclick = startTimer;
+            document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
+            document.getElementById('btnTiempo').onclick = startTimer;
             updateGameStatus('Pausado');
         }
 
@@ -967,6 +973,11 @@
             document.getElementById('resetModal').classList.remove('active');
         }
 
+        // Function called from header button INICIO JUEGO
+        function confirmResetFromHeader() {
+            showResetModal();
+        }
+
         function confirmReset() {
             players.forEach(p => p.score = 0);
             renderPlayers();
@@ -976,8 +987,8 @@
             clearInterval(timerInterval);
             document.getElementById('shotTimer').classList.remove('warning', 'danger');
             updateTimerDisplay();
-            document.getElementById('startBtnTop').textContent = '▶️ Inicio Jugada';
-            document.getElementById('startBtnTop').onclick = startGame;
+            document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
+            document.getElementById('btnTiempo').onclick = startGame;
             updateGameStatus('Listo');
             
             hideResetModal();
@@ -994,11 +1005,7 @@
 
         // Initialize
         initPlayers();
-        
-        // Start camera detection on load
         setTimeout(findAndConnectCamera, 500);
-
-        // Listen for device changes (hot-plug)
         navigator.mediaDevices.addEventListener('devicechange', () => {
             setTimeout(findAndConnectCamera, 1000);
         });
