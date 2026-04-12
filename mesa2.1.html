@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa 1 - Sistema de Marcador</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #16213e;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            color: #e94560;
+        }
+
+        .player-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* INICIO JUEGO button - GREEN color */
+        .btn-inicio-juego {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2ecc71;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-inicio-juego:hover {
+            background: #27ae60;
+            transform: scale(1.05);
+        }
+
+        .btn-player-count {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .btn-player-count:hover, .btn-player-count.active {
+            background: #e94560;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        /* Player Columns - Equal width distribution */
+        .players-left, .players-right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 33.33%;
+            min-width: 200px;
+        }
+
+        /* Player Card */
+        .player-card {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 15px;
+            border: 3px solid #0f3460;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.3s;
+            min-height: 0;
+            height: 100%;
+            max-height: 100%;
+        }
+
+        .player-card.active {
+            border-color: #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .player-card.yellow-theme {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border-color: #d68910;
+        }
+
+        .player-card.white-theme {
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+            color: #2c3e50;
+            border-color: #95a5a6;
+        }
+
+        .player-number {
+            font-size: 1em;
+            font-weight: bold;
+            opacity: 0.8;
+            align-self: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .score-display {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 0;
+        }
+
+        .player-score {
+            font-size: 5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        .player-score:active {
+            transform: scale(0.95);
+        }
+
+        /* Score Controls Inside Card */
+        .score-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .score-btn {
+            flex: 1;
+            min-width: 35px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .score-btn:hover {
+            background: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .score-btn:active {
+            transform: translateY(0);
+        }
+
+        .score-btn.add {
+            background: #27ae60;
+        }
+
+        .score-btn.add:hover {
+            background: #2ecc71;
+        }
+
+        .score-btn.subtract {
+            background: #c0392b;
+        }
+
+        .score-btn.subtract:hover {
+            background: #e74c3c;
+        }
+
+        /* Theme adjustments for buttons */
+        .player-card.yellow-theme .score-btn {
+            background: rgba(0,0,0,0.2);
+            color: #000;
+        }
+
+        .player-card.yellow-theme .score-btn.add {
+            background: rgba(39, 174, 96, 0.8);
+            color: #fff;
+        }
+
+        .player-card.yellow-theme .score-btn.subtract {
+            background: rgba(192, 57, 43, 0.8);
+            color: #fff;
+        }
+
+        .player-card.white-theme .score-btn {
+            background: rgba(0,0,0,0.1);
+            color: #2c3e50;
+        }
+
+        .player-card.white-theme .score-btn.add {
+            background: rgba(39, 174, 96, 0.8);
+            color: #fff;
+        }
+
+        .player-card.white-theme .score-btn.subtract {
+            background: rgba(192, 57, 43, 0.8);
+            color: #fff;
+        }
+
+        /* Center Panel - Camera with recording controls */
+        .center-panel {
+            width: 33.33%;
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .camera-container {
+            flex: 1;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid #0f3460;
+            min-height: 300px;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #0f3460;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Recording Controls */
+        .recording-controls {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-record {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #e74c3c;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        .btn-record:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-record.recording {
+            background: #27ae60;
+        }
+
+        .btn-record:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        .btn-close {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #95a5a6;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-close:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        /* Footer Controls */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+            gap: 20px;
+        }
+
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .timer-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #e94560;
+            font-family: 'Courier New', monospace;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .timer-display.warning {
+            animation: pulse 1s infinite;
+            color: #f39c12;
+        }
+
+        .timer-display.danger {
+            animation: pulse 0.5s infinite;
+            color: #c0392b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .controls-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* TIEMPO JUGADOR button - RED color */
+        .btn-tiempo {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .btn-tiempo:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-sound {
+            background: #3498db;
+            color: #fff;
+            padding: 15px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-sound.muted {
+            background: #7f8c8d;
+        }
+
+        .clock-display {
+            font-size: 1.5em;
+            color: #aaa;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #16213e;
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #e94560;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.yes {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .modal-btn.no {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hidden state */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .player-score {
+                font-size: 4em;
+            }
+            .score-btn {
+                height: 35px;
+                font-size: 1.1em;
+                min-width: 30px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .player-score {
+                font-size: 3em;
+            }
+            .score-btn {
+                height: 30px;
+                font-size: 1em;
+                min-width: 28px;
+            }
+            .center-panel {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>🏆 MESA 1</h1>
+            </div>
+            <div class="player-selector">
+                <button class="btn-inicio-juego" onclick="confirmResetFromHeader()">
+                    🔄 INICIO JUEGO
+                </button>
+                <button class="btn-player-count" onclick="setPlayerCount(2)">2 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(3)">3 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(4)">4 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(5)">5 JUGADOR</button>
+                <button class="btn-player-count" onclick="setPlayerCount(6)">6 JUGADOR</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Players -->
+            <div class="players-left" id="playersLeft">
+                <!-- Players 1, 3, 5 -->
+            </div>
+
+            <!-- Center Panel - Camera with recording controls -->
+            <div class="center-panel">
+                <div class="camera-container">
+                    <div class="camera-placeholder" id="cameraPlaceholder">
+                        <div style="font-size: 2.5em; margin-bottom: 10px;">📹</div>
+                        <div id="placeholderText">Buscando cámara externa...</div>
+                    </div>
+                    <video class="camera-feed hidden" id="cameraFeed" autoplay muted playsinline></video>
+                </div>
+
+                <!-- Recording Controls - GRABAR JUGADAS and CERRAR side by side -->
+                <div class="recording-controls">
+                    <button class="btn-record" id="btnGrabar" onclick="toggleRecording()">
+                        ⏺️ GRABAR JUGADAS
+                    </button>
+                    <button class="btn-close" onclick="closeRecording()">
+                        ❌ CERRAR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Players -->
+            <div class="players-right" id="playersRight">
+                <!-- Players 2, 4, 6 -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="timer-section">
+                <div class="timer-display" id="shotTimer">40</div>
+                <div class="clock-display" id="clock">00:00:00</div>
+            </div>
+
+            <div class="controls-section">
+                <button class="control-btn btn-tiempo" id="btnTiempo" onclick="startGame()">
+                    ⏱️ TIEMPO JUGADOR
+                </button>
+                <button class="control-btn btn-sound" id="soundBtn" onclick="toggleSound()">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal-content">
+            <h2>¿Reiniciar Juego?</h2>
+            <p>Se borrarán todos los puntos. ¿Estás seguro?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn yes" onclick="confirmReset()">Sí</button>
+                <button class="modal-btn no" onclick="hideResetModal()">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let playerCount = 2;
+        let players = [];
+        let timerInterval = null;
+        let shotTime = 40;
+        let isTimerRunning = false;
+        let soundEnabled = true;
+        let stream = null;
+        let currentCameraLabel = '';
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        // Audio Context for beep
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playBeep(frequency = 800, duration = 200, type = 'square') {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function playWarningSound() {
+            playBeep(600, 100, 'sine');
+            setTimeout(() => playBeep(600, 100, 'sine'), 150);
+        }
+
+        function playFinalSound() {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => playBeep(400, 300, 'sawtooth'), i * 350);
+            }
+        }
+
+        // Initialize Players
+        function initPlayers() {
+            players = [];
+            for (let i = 1; i <= 6; i++) {
+                players.push({
+                    id: i,
+                    score: 0,
+                    active: i <= playerCount
+                });
+            }
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const leftContainer = document.getElementById('playersLeft');
+            const rightContainer = document.getElementById('playersRight');
+            
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            players.forEach((player) => {
+                if (!player.active) return;
+                
+                const isLeft = player.id % 2 === 1;
+                const theme = (player.id - 1) % 2 === 0 ? 'yellow-theme' : 'white-theme';
+                
+                const card = document.createElement('div');
+                card.className = `player-card ${theme}`;
+                card.innerHTML = `
+                    <div class="player-number">Jugador ${player.id}</div>
+                    <div class="score-display">
+                        <div class="player-score" onclick="changeScore(${player.id}, 1)">${player.score}</div>
+                    </div>
+                    <div class="score-controls">
+                        <button class="score-btn add" onclick="changeScore(${player.id}, 1)">+1</button>
+                        <button class="score-btn add" onclick="changeScore(${player.id}, 2)">+2</button>
+                        <button class="score-btn add" onclick="changeScore(${player.id}, 3)">+3</button>
+                        <button class="score-btn add" onclick="changeScore(${player.id}, 4)">+4</button>
+                        <button class="score-btn subtract" onclick="changeScore(${player.id}, -1)">-1</button>
+                    </div>
+                `;
+                
+                if (isLeft) {
+                    leftContainer.appendChild(card);
+                } else {
+                    rightContainer.appendChild(card);
+                }
+            });
+        }
+
+        function setPlayerCount(count) {
+            playerCount = count;
+            
+            document.querySelectorAll('.btn-player-count').forEach((btn) => {
+                const btnNumber = parseInt(btn.textContent);
+                btn.classList.toggle('active', btnNumber === count);
+            });
+            
+            initPlayers();
+        }
+
+        function changeScore(playerId, delta) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            const newScore = player.score + delta;
+            if (newScore >= 0 && newScore <= 300) {
+                player.score = newScore;
+                renderPlayers();
+                playBeep(1000, 50, 'sine');
+            }
+        }
+
+        // Camera Functions
+        function isExternalCamera(label) {
+            if (!label) return false;
+            const lowerLabel = label.toLowerCase();
+            const externalKeywords = [
+                'usb', 'hdmi', 'capture', 'webcam', 'cam link', 
+                'elgato', 'avermedia', 'blackmagic', 'magewell',
+                'ip camera', 'network', 'wifi', 'wireless', 'rtsp',
+                'obs', 'virtual', 'droidcam', 'ivcam', 'epocam'
+            ];
+            return externalKeywords.some(keyword => lowerLabel.includes(keyword));
+        }
+
+        function isInternalCamera(label) {
+            if (!label) return false;
+            const lowerLabel = label.toLowerCase();
+            const internalKeywords = [
+                'integrated', 'built-in', 'internal', 'laptop',
+                'front', 'rear', 'faceTime', 'photo booth'
+            ];
+            return internalKeywords.some(keyword => lowerLabel.includes(keyword));
+        }
+
+        async function findAndConnectCamera() {
+            const placeholderText = document.getElementById('placeholderText');
+            if (placeholderText) placeholderText.textContent = 'Buscando cámara...';
+            
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    if (placeholderText) placeholderText.textContent = 'No hay cámaras disponibles';
+                    return;
+                }
+
+                const sortedDevices = videoDevices.sort((a, b) => {
+                    const aExternal = isExternalCamera(a.label);
+                    const bExternal = isExternalCamera(b.label);
+                    const aInternal = isInternalCamera(a.label);
+                    const bInternal = isInternalCamera(b.label);
+                    
+                    if (aExternal && !bExternal) return -1;
+                    if (!aExternal && bExternal) return 1;
+                    if (aInternal && !bInternal) return 1;
+                    if (!aInternal && bInternal) return -1;
+                    return 0;
+                });
+
+                for (const device of sortedDevices) {
+                    try {
+                        const constraints = {
+                            video: {
+                                deviceId: { exact: device.deviceId },
+                                width: { ideal: 1280 },
+                                height: { ideal: 720 }
+                            },
+                            audio: false
+                        };
+                        
+                        stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        
+                        const video = document.getElementById('cameraFeed');
+                        video.srcObject = stream;
+                        
+                        document.getElementById('cameraPlaceholder').classList.add('hidden');
+                        video.classList.remove('hidden');
+                        
+                        currentCameraLabel = device.label || 'Cámara desconocida';
+                        
+                        playBeep(800, 100, 'sine');
+                        return;
+                        
+                    } catch (err) {
+                        console.log(`Error con ${device.label}:`, err);
+                        continue;
+                    }
+                }
+                
+                if (placeholderText) placeholderText.textContent = 'Error de conexión';
+                
+            } catch (err) {
+                console.error('Error enumerando dispositivos:', err);
+                if (placeholderText) placeholderText.textContent = 'Error de acceso';
+                tryBasicCamera();
+            }
+        }
+
+        async function tryBasicCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 }, 
+                    audio: false 
+                });
+                
+                const video = document.getElementById('cameraFeed');
+                video.srcObject = stream;
+                
+                document.getElementById('cameraPlaceholder').classList.add('hidden');
+                video.classList.remove('hidden');
+                
+                playBeep(800, 100, 'sine');
+                
+            } catch (err) {
+                const placeholderText = document.getElementById('placeholderText');
+                if (placeholderText) placeholderText.textContent = 'Permiso denegado';
+            }
+        }
+
+        // Recording Functions
+        function toggleRecording() {
+            const btn = document.getElementById('btnGrabar');
+            
+            if (!isRecording) {
+                // Start recording
+                if (!stream) {
+                    alert('No hay cámara conectada');
+                    return;
+                }
+                
+                recordedChunks = [];
+                const options = { mimeType: 'video/webm;codecs=vp9' };
+                
+                try {
+                    mediaRecorder = new MediaRecorder(stream, options);
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(stream);
+                }
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.start(1000);
+                isRecording = true;
+                
+                btn.textContent = '⏹️ DETENER';
+                btn.classList.add('recording');
+                playBeep(800, 100, 'sine');
+                
+            } else {
+                // Stop recording
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                btn.textContent = '⏺️ GRABAR JUGADAS';
+                btn.classList.remove('recording');
+                
+                // Download recording
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `jugada_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                playBeep(600, 200, 'sine');
+            }
+        }
+
+        function closeRecording() {
+            if (isRecording) {
+                toggleRecording();
+            }
+            // Clear recorded chunks
+            recordedChunks = [];
+            playBeep(400, 100, 'sine');
+        }
+
+        // Timer Functions
+        function startTimer() {
+            if (isTimerRunning) return;
+            
+            isTimerRunning = true;
+            shotTime = 40;
+            updateTimerDisplay();
+            
+            document.getElementById('btnTiempo').textContent = '⏸️ PAUSAR';
+            document.getElementById('btnTiempo').onclick = pauseGame;
+            
+            timerInterval = setInterval(() => {
+                shotTime--;
+                updateTimerDisplay();
+                
+                if (shotTime === 10) {
+                    playWarningSound();
+                    document.getElementById('shotTimer').classList.add('warning');
+                }
+                
+                if (shotTime <= 5 && shotTime > 0) {
+                    playBeep(800, 100);
+                }
+                
+                if (shotTime <= 0) {
+                    playFinalSound();
+                    setTimeout(() => {
+                        shotTime = 40;
+                        document.getElementById('shotTimer').classList.remove('warning', 'danger');
+                        updateTimerDisplay();
+                        playBeep(600, 100);
+                    }, 1500);
+                }
+            }, 1000);
+        }
+
+        function pauseGame() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
+            document.getElementById('btnTiempo').onclick = startTimer;
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('shotTimer');
+            display.textContent = shotTime;
+            
+            if (shotTime > 10) {
+                display.classList.remove('warning', 'danger');
+            }
+        }
+
+        function startGame() {
+            shotTime = 40;
+            document.getElementById('shotTimer').classList.remove('warning', 'danger');
+            updateTimerDisplay();
+            
+            startTimer();
+        }
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-ES', { hour12: false });
+            document.getElementById('clock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Sound Toggle
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.classList.toggle('muted', !soundEnabled);
+        }
+
+        // Modal Functions
+        function showResetModal() {
+            document.getElementById('resetModal').classList.add('active');
+            if (isTimerRunning) pauseGame();
+        }
+
+        function hideResetModal() {
+            document.getElementById('resetModal').classList.remove('active');
+        }
+
+        function confirmResetFromHeader() {
+            showResetModal();
+        }
+
+        function confirmReset() {
+            players.forEach(p => p.score = 0);
+            renderPlayers();
+            
+            shotTime = 40;
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('shotTimer').classList.remove('warning', 'danger');
+            updateTimerDisplay();
+            document.getElementById('btnTiempo').textContent = '▶️ TIEMPO JUGADOR';
+            document.getElementById('btnTiempo').onclick = startGame;
+            
+            hideResetModal();
+            playBeep(600, 200);
+        }
+
+        // Initialize
+        initPlayers();
+        setTimeout(findAndConnectCamera, 500);
+        navigator.mediaDevices.addEventListener('devicechange', () => {
+            setTimeout(findAndConnectCamera, 1000);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isTimerRunning) pauseGame();
+                else startGame();
+            }
+            if (e.code === 'KeyM') toggleSound();
+        });
+    </script>
+</body>
+</html>
