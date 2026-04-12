@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <title>Mesa 1 - Sistema de Marcador con Grabación</title>
     <style>
         * {
@@ -1615,6 +1616,98 @@
         });
 
         init();
+        // ============================================
+// PEERJS BROADCAST - TRANSMISIÓN EN VIVO
+// ============================================
+const BROADCASTER_ID = 'mesa1-broadcaster-001'; // ID único (cambiar si hay múltiples mesas)
+let broadcastPeer = null;
+let activeCalls = new Map(); // Llamadas activas a espectadores
+
+function initBroadcastPeerJS() {
+    console.log('Iniciando PeerJS Broadcast...');
+    
+    broadcastPeer = new Peer(BROADCASTER_ID, {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true,
+        debug: 1
+    });
+
+    broadcastPeer.on('open', (id) => {
+        console.log('✅ Broadcaster conectado con ID:', id);
+        
+        // Mostrar indicador visual de que está transmitiendo
+        const header = document.querySelector('.header h1');
+        if (header && !header.querySelector('.live-dot')) {
+            header.innerHTML += ' <span class="live-dot" style="color: #e74c3c; animation: blink 1s infinite;">● LIVE</span>';
+        }
+    });
+
+    broadcastPeer.on('call', (call) => {
+        console.log('📞 Nuevo espectador conectándose:', call.peer);
+        
+        // Responder con el stream de la cámara
+        if (stream) {
+            call.answer(stream);
+            activeCalls.set(call.peer, call);
+            
+            // Notificar en consola
+            console.log(`✅ Espectador ${call.peer.substr(0,8)}... conectado. Total: ${activeCalls.size}`);
+            
+            // Opcional: Sonido de notificación
+            playBeep(1200, 100, 'sine');
+            
+            call.on('close', () => {
+                console.log('❌ Espectador desconectado:', call.peer);
+                activeCalls.delete(call.peer);
+            });
+            
+            call.on('error', (err) => {
+                console.error('Error en llamada:', err);
+                activeCalls.delete(call.peer);
+            });
+        } else {
+            console.error('No hay stream disponible para transmitir');
+            call.close();
+        }
+    });
+
+    broadcastPeer.on('error', (err) => {
+        console.error('Error PeerJS:', err);
+        
+        if (err.type === 'unavailable-id') {
+            // El ID ya está en uso, intentar con uno alternativo
+            console.log('ID en uso, intentando reconectar...');
+            setTimeout(() => {
+                broadcastPeer.destroy();
+                initBroadcastPeerJS();
+            }, 3000);
+        }
+    });
+
+    broadcastPeer.on('disconnected', () => {
+        console.log('Desconectado del servidor, reconectando...');
+        setTimeout(() => {
+            broadcastPeer.reconnect();
+        }, 2000);
+    });
+}
+
+// Función para ver espectadores conectados (debug)
+function getConnectedViewers() {
+    return activeCalls.size;
+}
+
+// Modificar la función findAndConnectCamera para iniciar broadcast cuando esté listo
+const originalFindAndConnectCamera = findAndConnectCamera;
+findAndConnectCamera = async function() {
+    await originalFindAndConnectCamera();
+    
+    // Iniciar broadcast cuando la cámara esté lista
+    if (stream) {
+        setTimeout(initBroadcastPeerJS, 1000);
+    }
+};
     </script>
 </body>
 </html>
