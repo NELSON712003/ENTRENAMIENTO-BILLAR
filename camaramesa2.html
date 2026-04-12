@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista de Cámara - Mesa 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .camera-viewer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        .camera-header {
+            background: #16213e;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f3460;
+        }
+
+        .camera-header h1 {
+            font-size: 1.3em;
+            color: #e94560;
+        }
+
+        .camera-status {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .camera-status.connected {
+            color: #27ae60;
+        }
+
+        .camera-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #0f3460;
+            font-size: 1.5em;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .camera-footer {
+            background: #16213e;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            border-top: 2px solid #0f3460;
+        }
+
+        .btn-control {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #0f3460;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-control:hover {
+            background: #e94560;
+            transform: translateY(-2px);
+        }
+
+        .btn-control:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="camera-viewer">
+        <div class="camera-header">
+            <h1>📹 VISTA DE CÁMARA - MESA 1</h1>
+            <div class="camera-status" id="cameraStatus">Buscando...</div>
+        </div>
+
+        <div class="camera-container">
+            <div class="camera-placeholder" id="cameraPlaceholder">
+                <div style="font-size: 3em; margin-bottom: 15px;">📹</div>
+                <div>Buscando cámara externa...</div>
+                <div style="font-size: 0.7em; margin-top: 10px; color: #666;">
+                    (Se conectará automáticamente a la misma cámara del sistema principal)
+                </div>
+            </div>
+            <video class="camera-feed hidden" id="cameraFeed" autoplay muted playsinline></video>
+        </div>
+
+        <div class="camera-footer">
+            <button class="btn-control" id="btnReconectar" onclick="reconnectCamera()">
+                🔄 RECONECTAR
+            </button>
+            <button class="btn-control" onclick="toggleFullscreen()">
+                ⛶ PANTALLA COMPLETA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+        let currentCameraLabel = '';
+
+        // Funciones de detección de cámara (mismas que el script principal)
+        function isExternalCamera(label) {
+            if (!label) return false;
+            const lowerLabel = label.toLowerCase();
+            const externalKeywords = [
+                'usb', 'hdmi', 'capture', 'webcam', 'cam link', 
+                'elgato', 'avermedia', 'blackmagic', 'magewell',
+                'ip camera', 'network', 'wifi', 'wireless', 'rtsp',
+                'obs', 'virtual', 'droidcam', 'ivcam', 'epocam'
+            ];
+            return externalKeywords.some(keyword => lowerLabel.includes(keyword));
+        }
+
+        function isInternalCamera(label) {
+            if (!label) return false;
+            const lowerLabel = label.toLowerCase();
+            const internalKeywords = [
+                'integrated', 'built-in', 'internal', 'laptop',
+                'front', 'rear', 'faceTime', 'photo booth'
+            ];
+            return internalKeywords.some(keyword => lowerLabel.includes(keyword));
+        }
+
+        async function findAndConnectCamera() {
+            const status = document.getElementById('cameraStatus');
+            const placeholderText = document.querySelector('#cameraPlaceholder div:nth-child(2)');
+            
+            status.textContent = 'Buscando...';
+            status.className = 'camera-status';
+            
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    status.textContent = 'No se encontraron cámaras';
+                    if (placeholderText) placeholderText.textContent = 'No hay cámaras disponibles';
+                    return;
+                }
+
+                // Ordenar: externas primero, luego internas
+                const sortedDevices = videoDevices.sort((a, b) => {
+                    const aExternal = isExternalCamera(a.label);
+                    const bExternal = isExternalCamera(b.label);
+                    const aInternal = isInternalCamera(a.label);
+                    const bInternal = isInternalCamera(b.label);
+                    
+                    if (aExternal && !bExternal) return -1;
+                    if (!aExternal && bExternal) return 1;
+                    if (aInternal && !bInternal) return 1;
+                    if (!aInternal && bInternal) return -1;
+                    return 0;
+                });
+
+                for (const device of sortedDevices) {
+                    try {
+                        const constraints = {
+                            video: {
+                                deviceId: { exact: device.deviceId },
+                                width: { ideal: 1920 },
+                                height: { ideal: 1080 }
+                            },
+                            audio: false
+                        };
+                        
+                        stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        
+                        const video = document.getElementById('cameraFeed');
+                        video.srcObject = stream;
+                        
+                        document.getElementById('cameraPlaceholder').classList.add('hidden');
+                        video.classList.remove('hidden');
+                        
+                        currentCameraLabel = device.label || 'Cámara desconocida';
+                        const isExternal = isExternalCamera(device.label);
+                        
+                        status.textContent = `${isExternal ? 'Externa' : 'Interna'}: ${currentCameraLabel.substring(0, 30)}`;
+                        status.className = 'camera-status connected';
+                        
+                        return;
+                        
+                    } catch (err) {
+                        console.log(`Error con ${device.label}:`, err);
+                        continue;
+                    }
+                }
+                
+                status.textContent = 'Error al conectar';
+                if (placeholderText) placeholderText.textContent = 'Error de conexión';
+                
+            } catch (err) {
+                console.error('Error:', err);
+                status.textContent = 'Error de acceso';
+                tryBasicCamera();
+            }
+        }
+
+        async function tryBasicCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 }, 
+                    audio: false 
+                });
+                
+                const video = document.getElementById('cameraFeed');
+                video.srcObject = stream;
+                
+                document.getElementById('cameraPlaceholder').classList.add('hidden');
+                video.classList.remove('hidden');
+                
+                const status = document.getElementById('cameraStatus');
+                status.textContent = 'Cámara por defecto';
+                status.className = 'camera-status connected';
+                
+            } catch (err) {
+                const status = document.getElementById('cameraStatus');
+                status.textContent = 'Sin acceso';
+            }
+        }
+
+        function reconnectCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            findAndConnectCamera();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Inicializar
+        setTimeout(findAndConnectCamera, 500);
+
+        // Escuchar cambios de dispositivos
+        navigator.mediaDevices.addEventListener('devicechange', () => {
+            setTimeout(findAndConnectCamera, 1000);
+        });
+    </script>
+</body>
+</html>
