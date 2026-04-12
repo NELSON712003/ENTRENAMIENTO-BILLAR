@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesa 1 - Sistema de Marcador con Grabación</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1207,6 +1208,9 @@
                         
                         console.log('Cámara conectada:', currentCameraLabel);
                         playBeep(800, 100, 'sine');
+                        // INICIAR BROADCAST DESPUÉS DE 2 SEGUNDOS (dar tiempo a que el stream se estabilice)
+                         console.log('Iniciando broadcast en 2 segundos...');
+                         setTimeout(initBroadcastPeerJS, 2000);
                         return;
                         
                     } catch (err) {
@@ -1624,7 +1628,111 @@
             if (e.code === 'KeyM') toggleSound();
             if (e.code === 'KeyR') toggleRecording();
         });
+        // ============================================
+// PEERJS BROADCAST - TRANSMISIÓN EN VIVO
+// ============================================
+const BROADCASTER_ID = 'mesa1-broadcaster-001';
+let broadcastPeer = null;
+let activeCalls = new Map();
 
+function initBroadcastPeerJS() {
+    console.log('>>> INICIANDO PEERJS BROADCAST...');
+    
+    // Verificar que PeerJS esté cargado
+    if (typeof Peer === 'undefined') {
+        console.error('ERROR: PeerJS no está cargado. Revisa el script en <head>');
+        alert('Error: No se pudo cargar PeerJS. Revisa tu conexión a internet.');
+        return;
+    }
+    
+    // Verificar que tengamos stream de cámara
+    if (!stream) {
+        console.error('ERROR: No hay stream de cámara disponible');
+        setTimeout(initBroadcastPeerJS, 2000); // Reintentar en 2 segundos
+        return;
+    }
+
+    console.log('Stream disponible, conectando a PeerJS...');
+    
+    broadcastPeer = new Peer(BROADCASTER_ID, {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true,
+        debug: 2 // Nivel 2 para ver más logs
+    });
+
+    broadcastPeer.on('open', (id) => {
+        console.log('✅✅✅ BROADCASTER CONECTADO ✅✅✅');
+        console.log('ID:', id);
+        console.log('Esperando espectadores...');
+        
+        // Indicador visual en el header
+        const header = document.querySelector('.header h1');
+        if (header && !document.getElementById('liveIndicator')) {
+            const liveSpan = document.createElement('span');
+            liveSpan.id = 'liveIndicator';
+            liveSpan.innerHTML = ' 🔴 LIVE';
+            liveSpan.style.color = '#e74c3c';
+            liveSpan.style.fontSize = '0.6em';
+            liveSpan.style.marginLeft = '10px';
+            liveSpan.style.animation = 'blink 1s infinite';
+            header.appendChild(liveSpan);
+        }
+    });
+
+    broadcastPeer.on('call', (call) => {
+        console.log('📞📞📞 NUEVO ESPECTADOR:', call.peer);
+        
+        // Responder con nuestro stream de cámara
+        call.answer(stream);
+        activeCalls.set(call.peer, call);
+        
+        console.log('✅ Stream enviado a espectador. Total:', activeCalls.size);
+        
+        // Beep de notificación
+        playBeep(1200, 100, 'sine');
+        
+        call.on('close', () => {
+            console.log('❌ Espectador desconectado:', call.peer);
+            activeCalls.delete(call.peer);
+        });
+        
+        call.on('error', (err) => {
+            console.error('Error con espectador:', err);
+            activeCalls.delete(call.peer);
+        });
+    });
+
+    broadcastPeer.on('error', (err) => {
+        console.error('❌ ERROR PEERJS:', err.type, err.message);
+        
+        if (err.type === 'unavailable-id') {
+            console.log('ID ocupado, destruyendo y recreando...');
+            broadcastPeer.destroy();
+            setTimeout(initBroadcastPeerJS, 3000);
+        } else if (err.type === 'network') {
+            console.log('Error de red, reintentando en 5s...');
+            setTimeout(initBroadcastPeerJS, 5000);
+        }
+    });
+
+    broadcastPeer.on('disconnected', () => {
+        console.log('Desconectado del servidor PeerJS, reconectando...');
+        setTimeout(() => {
+            if (broadcastPeer) broadcastPeer.reconnect();
+        }, 2000);
+    });
+}
+
+// CSS para animación
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+`;
+document.head.appendChild(style);
         init();
     </script>
 </body>
