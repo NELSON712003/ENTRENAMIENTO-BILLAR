@@ -28,7 +28,7 @@
             padding: 10px;
             gap: 10px;
         }
-
+          
         /* Header */
         .header {
             display: flex;
@@ -50,8 +50,19 @@
             font-size: 1.5em;
             color: #e94560;
         }
+        
+   /* Indicador LIVE en el header */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
 
-        .player-selector {
+.live-dot {
+    font-size: 0.6em;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+     .player-selector {
             display: flex;
             gap: 10px;
             align-items: center;
@@ -806,7 +817,7 @@
             <!-- Center Panel - Camera & Recording System -->
             <div class="center-panel">
                 <div class="camera-container" id="cameraContainer">
-                    <!-- Botón REPETIR superior delgado -->
+                    <!-- Botón GRABAR JUEGO superior delgado -->
                     <div class="btn-repetir-container">
                         <button class="btn-repetir" id="btnRepetir" onclick="toggleRecording()">
                             🔴 REPETIR
@@ -849,7 +860,7 @@
                                 </div>
                             </div>
 
-                            <!-- Lista de grabaciones -->
+                            <!--00 -->
                             <div class="recordings-list" id="recordingsList">
                                 <!-- Las grabaciones se cargan dinámicamente -->
                             </div>
