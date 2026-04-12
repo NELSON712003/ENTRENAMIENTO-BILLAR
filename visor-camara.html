@@ -208,7 +208,6 @@
 
         .hidden { display: none !important; }
 
-        /* Error message */
         .error-message {
             background: rgba(231, 76, 60, 0.2);
             border: 1px solid #e74c3c;
@@ -230,6 +229,21 @@
             max-width: 300px;
             z-index: 20;
         }
+
+        .retry-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #3498db;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .retry-btn:hover {
+            background: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -244,6 +258,7 @@
                 <div class="icon">📡</div>
                 <div>Conectando a la transmisión...</div>
                 <div class="status" id="connectionStatus">Inicializando...</div>
+                <button class="retry-btn hidden" id="retryBtn" onclick="manualReconnect()">Reintentar ahora</button>
             </div>
             
             <video id="videoPlayer" autoplay playsinline muted class="hidden"></video>
@@ -259,6 +274,7 @@
             <div class="debug-info hidden" id="debugInfo">
                 <div>Esperando broadcaster: <span id="broadcasterId"></span></div>
                 <div>Estado: <span id="debugStatus">inicializando</span></div>
+                <div>Espectadores conectados: <span id="viewersCount">0</span></div>
             </div>
 
             <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Pantalla completa">
@@ -298,6 +314,7 @@
         const debugInfo = document.getElementById('debugInfo');
         const broadcasterIdDisplay = document.getElementById('broadcasterId');
         const debugStatus = document.getElementById('debugStatus');
+        const retryBtn = document.getElementById('retryBtn');
 
         broadcasterIdDisplay.textContent = BROADCASTER_ID;
 
@@ -309,12 +326,34 @@
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 10;
         let isConnected = false;
+        let dummyStream = null; // Stream vacío para la llamada
 
         // ============================================
         // INICIALIZACIÓN
         // ============================================
-        function init() {
-            updateStatus('Iniciando PeerJS...');
+        async function init() {
+            updateStatus('Iniciando...');
+            debugStatus.textContent = 'creando stream dummy';
+            
+            // Crear un stream dummy (silencio + video negro) para poder llamar al broadcaster
+            // Esto es necesario porque PeerJS requiere un stream para hacer call()
+            try {
+                dummyStream = createDummyStream();
+                debugStatus.textContent = 'stream dummy creado';
+            } catch (err) {
+                console.error('Error creando stream dummy:', err);
+                // Intentar obtener un stream real del micrófono (sin cámara)
+                try {
+                    dummyStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                } catch (err2) {
+                    console.error('No se pudo obtener audio:', err2);
+                    updateStatus('Error: Permisos de audio necesarios');
+                    retryBtn.classList.remove('hidden');
+                    return;
+                }
+            }
+            
+            updateStatus('Conectando al servidor PeerJS...');
             debugStatus.textContent = 'conectando al servidor';
             
             try {
@@ -327,7 +366,6 @@
                     debugInfo.classList.remove('hidden');
                     debugStatus.textContent = 'conectado, buscando broadcaster';
                     
-                    // Pequeña pausa para asegurar que todo está listo
                     setTimeout(connectToBroadcaster, 1000);
                 });
 
@@ -353,7 +391,36 @@
             } catch (err) {
                 console.error('Error creando Peer:', err);
                 showError('Error al iniciar: ' + err.message);
+                retryBtn.classList.remove('hidden');
             }
+        }
+
+        // Crear un stream dummy con audio silencioso
+        function createDummyStream() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const dst = audioContext.createMediaStreamDestination();
+            oscillator.connect(dst);
+            oscillator.start();
+            oscillator.stop(0.001); // Silencio inmediato
+            
+            // Crear un canvas negro para video dummy
+            const canvas = document.createElement('canvas');
+            canvas.width = 2;
+            canvas.height = 2;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, 2, 2);
+            
+            const videoStream = canvas.captureStream(1); // 1 fps
+            
+            // Combinar audio y video
+            const combinedStream = new MediaStream([
+                ...videoStream.getVideoTracks(),
+                ...dst.stream.getAudioTracks()
+            ]);
+            
+            return combinedStream;
         }
 
         // ============================================
@@ -366,8 +433,8 @@
             debugStatus.textContent = 'intentando llamar al broadcaster';
             
             try {
-                // Crear una llamada al broadcaster (sin stream, solo recibimos)
-                const call = peer.call(BROADCASTER_ID, null);
+                // IMPORTANTE: Ahora pasamos el dummyStream en lugar de null
+                const call = peer.call(BROADCASTER_ID, dummyStream);
                 
                 if (!call) {
                     console.log('⚠️ No se pudo crear la llamada, reintentando...');
@@ -393,6 +460,7 @@
                 console.log('✅ Stream recibido!');
                 isConnected = true;
                 reconnectAttempts = 0;
+                retryBtn.classList.add('hidden');
                 
                 // Mostrar video
                 videoPlayer.srcObject = remoteStream;
@@ -437,6 +505,7 @@
             updateStatus('Transmisión finalizada. Reconectando...');
             statusDot.className = 'status-dot';
             debugStatus.textContent = 'desconectado, reintentando';
+            retryBtn.classList.remove('hidden');
             
             if (currentCall) {
                 currentCall.close();
@@ -453,11 +522,12 @@
             if (err.type === 'peer-unavailable') {
                 message = 'La mesa no está transmitiendo. Esperando...';
                 statusDot.className = 'status-dot';
-                // Reintentar en 3 segundos
+                retryBtn.classList.remove('hidden');
                 setTimeout(connectToBroadcaster, 3000);
             } else if (err.type === 'network') {
                 message = 'Error de red. Verifica tu conexión.';
                 statusDot.className = 'status-dot error';
+                retryBtn.classList.remove('hidden');
             } else if (err.type === 'server-error') {
                 message = 'Error del servidor. Reintentando...';
                 setTimeout(init, 5000);
@@ -466,6 +536,7 @@
                 setTimeout(() => location.reload(), 3000);
             } else {
                 statusDot.className = 'status-dot error';
+                retryBtn.classList.remove('hidden');
             }
             
             updateStatus(message);
@@ -479,6 +550,13 @@
                 <div class="error-message">${msg}</div>
             `;
             debugStatus.textContent = 'error fatal';
+        }
+
+        function manualReconnect() {
+            reconnectAttempts = 0;
+            if (!isConnected) {
+                connectToBroadcaster();
+            }
         }
 
         // ============================================
@@ -515,7 +593,7 @@
             }
         }
 
-        // Reconectar si el video se pausa inesperadamente
+        // Event listeners del video
         videoPlayer.addEventListener('pause', () => {
             if (!videoPlayer.ended && isConnected) {
                 console.log('⏸️ Video pausado, verificando conexión...');
