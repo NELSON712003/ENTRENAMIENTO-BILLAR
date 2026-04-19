@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔴 Transmisión en Vivo - Mesa 1</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1a1a2e;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+        }
+
+        .header h1 {
+            color: #e94560;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-badge {
+            background: #e74c3c;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .video-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .waiting-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #888;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .waiting-message .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        .waiting-message .status {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .connection-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            border: 1px solid #333;
+            z-index: 20;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f39c12;
+            animation: blink 1s infinite;
+        }
+
+        .status-dot.connected { 
+            background: #27ae60; 
+            animation: none;
+            box-shadow: 0 0 10px #27ae60;
+        }
+
+        .status-dot.error { 
+            background: #e74c3c; 
+            animation: none;
+        }
+
+        .peer-id {
+            font-family: 'Courier New', monospace;
+            color: #3498db;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .viewers-count {
+            color: #aaa;
+            font-size: 0.75em;
+            margin-top: 5px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .footer {
+            background: #1a1a2e;
+            padding: 15px;
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .quality-badge {
+            background: #27ae60;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+
+        .quality-badge.live {
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .hidden { display: none !important; }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #fff;
+        }
+
+        .debug-info {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            color: #aaa;
+            max-width: 300px;
+            z-index: 20;
+        }
+
+        .retry-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #3498db;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .retry-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .stats-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            z-index: 20;
+            border: 1px solid #333;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .stat-label { color: #888; }
+        .stat-value { color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 MESA 1 - Transmisión</h1>
+            <div class="live-badge" id="liveBadge">EN VIVO</div>
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <div class="waiting-message" id="waitingMessage">
+                <div class="icon">📡</div>
+                <div id="waitingText">Conectando a la transmisión...</div>
+                <div class="status" id="connectionStatus">Inicializando PeerJS...</div>
+                <button class="retry-btn hidden" id="retryBtn" onclick="manualReconnect()">Reintentar ahora</button>
+            </div>
+            
+            <video id="videoPlayer" autoplay playsinline muted class="hidden"></video>
+            
+            <div class="connection-info hidden" id="connectionInfo">
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Conectando...</span>
+                </div>
+                <div class="peer-id" id="peerIdDisplay"></div>
+                <div class="viewers-count" id="viewersCount"></div>
+            </div>
+
+            <div class="stats-overlay hidden" id="statsOverlay">
+                <div class="stat-row">
+                    <span class="stat-label">Resolución:</span>
+                    <span class="stat-value" id="resolutionStat">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Frame rate:</span>
+                    <span class="stat-value" id="fpsStat">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Latencia:</span>
+                    <span class="stat-value" id="latencyStat">-</span>
+                </div>
+            </div>
+
+            <div class="debug-info hidden" id="debugInfo">
+                <div>Broadcaster: <span id="broadcasterId"></span></div>
+                <div>Estado: <span id="debugStatus">inicializando</span></div>
+                <div>Reintentos: <span id="retryCount">0</span></div>
+                <div>Último error: <span id="lastError">ninguno</span></div>
+            </div>
+
+            <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Pantalla completa">
+                ⛶
+            </button>
+        </div>
+
+        <div class="footer">
+            <span>🔴 Transmisión en vivo • Mesa 1</span>
+            <span class="quality-badge" id="qualityBadge">Esperando...</span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN
+        // ============================================
+        const BROADCASTER_ID = 'mesa1-broadcaster-001';
+        const PEER_CONFIG = {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
+            debug: 2
+        };
+
+        // ============================================
+        // ELEMENTOS DOM
+        // ============================================
+        const videoPlayer = document.getElementById('videoPlayer');
+        const waitingMessage = document.getElementById('waitingMessage');
+        const waitingText = document.getElementById('waitingText');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionInfo = document.getElementById('connectionInfo');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const peerIdDisplay = document.getElementById('peerIdDisplay');
+        const qualityBadge = document.getElementById('qualityBadge');
+        const liveBadge = document.getElementById('liveBadge');
+        const debugInfo = document.getElementById('debugInfo');
+        const broadcasterIdDisplay = document.getElementById('broadcasterId');
+        const debugStatus = document.getElementById('debugStatus');
+        const retryCountDisplay = document.getElementById('retryCount');
+        const lastErrorDisplay = document.getElementById('lastError');
+        const retryBtn = document.getElementById('retryBtn');
+        const statsOverlay = document.getElementById('statsOverlay');
+
+        broadcasterIdDisplay.textContent = BROADCASTER_ID;
+
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let peer = null;
+        let currentCall = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        let isConnected = false;
+        let connectionCheckInterval = null;
+        let statsInterval = null;
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        async function init() {
+            updateStatus('Iniciando conexión...');
+            debugStatus.textContent = 'inicializando';
+            
+            // Crear peer con ID aleatorio (viewer)
+            try {
+                peer = new Peer(PEER_CONFIG);
+
+                peer.on('open', (id) => {
+                    console.log('✅ PeerJS conectado. Mi ID:', id);
+                    peerIdDisplay.textContent = `Viewer: ${id.substr(0, 12)}...`;
+                    connectionInfo.classList.remove('hidden');
+                    debugInfo.classList.remove('hidden');
+                    debugStatus.textContent = 'conectado al servidor';
+                    
+                    // Esperar un momento y conectar al broadcaster
+                    setTimeout(connectToBroadcaster, 1500);
+                });
+
+                peer.on('error', (err) => {
+                    console.error('❌ Error PeerJS:', err);
+                    lastErrorDisplay.textContent = `${err.type}: ${err.message}`;
+                    handlePeerError(err);
+                });
+
+                peer.on('disconnected', () => {
+                    console.log('⚠️ Desconectado del servidor');
+                    updateStatus('Reconectando al servidor...');
+                    statusDot.className = 'status-dot';
+                    debugStatus.textContent = 'reconectando';
+                    
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        retryCountDisplay.textContent = reconnectAttempts;
+                        setTimeout(() => {
+                            if (peer && !peer.destroyed) {
+                                peer.reconnect();
+                            }
+                        }, 2000);
+                    } else {
+                        showError('Máximo de reintentos alcanzado. Recarga la página.');
+                    }
+                });
+
+                peer.on('close', () => {
+                    console.log('🔌 Peer cerrado');
+                    handleDisconnect();
+                });
+
+            } catch (err) {
+                console.error('Error creando Peer:', err);
+                showError('Error al iniciar: ' + err.message);
+                retryBtn.classList.remove('hidden');
+            }
+        }
+
+        // ============================================
+        // CONEXIÓN AL BROADCASTER
+        // ============================================
+        function connectToBroadcaster() {
+            if (isConnected || !peer || peer.disconnected) {
+                console.log('No se puede conectar: ya conectado o peer no listo');
+                return;
+            }
+            
+            updateStatus(`Buscando broadcaster: ${BROADCASTER_ID}...`);
+            debugStatus.textContent = 'llamando al broadcaster';
+            waitingText.textContent = 'Buscando transmisión...';
+            
+            try {
+                // Llamar al broadcaster SIN stream (solo recibimos)
+                // PeerJS permite llamar sin stream en versiones recientes
+                const call = peer.call(BROADCASTER_ID, null);
+                
+                if (!call) {
+                    console.log('⚠️ No se pudo crear la llamada');
+                    updateStatus('Broadcaster no disponible, reintentando...');
+                    scheduleReconnect();
+                    return;
+                }
+
+                currentCall = call;
+                setupCallHandlers(call);
+                
+            } catch (err) {
+                console.error('Error al llamar:', err);
+                lastErrorDisplay.textContent = err.message;
+                scheduleReconnect();
+            }
+        }
+
+        function setupCallHandlers(call) {
+            console.log('📞 Llamada creada, esperando stream...');
+            updateStatus('Esperando respuesta del broadcaster...');
+            
+            // Timeout por si el broadcaster no responde
+            const connectionTimeout = setTimeout(() => {
+                if (!isConnected) {
+                    console.log('⏱️ Timeout esperando stream');
+                    updateStatus('Broadcaster no responde, reintentando...');
+                    call.close();
+                    scheduleReconnect();
+                }
+            }, 10000);
+
+            call.on('stream', (remoteStream) => {
+                clearTimeout(connectionTimeout);
+                console.log('✅ Stream recibido!');
+                handleStreamReceived(remoteStream);
+            });
+
+            call.on('close', () => {
+                clearTimeout(connectionTimeout);
+                console.log('📴 Llamada cerrada');
+                handleDisconnect();
+            });
+
+            call.on('error', (err) => {
+                clearTimeout(connectionTimeout);
+                console.error('❌ Error en llamada:', err);
+                lastErrorDisplay.textContent = err.message;
+                handleDisconnect();
+            });
+        }
+
+        function handleStreamReceived(remoteStream) {
+            isConnected = true;
+            reconnectAttempts = 0;
+            retryCountDisplay.textContent = '0';
+            retryBtn.classList.add('hidden');
+            
+            // Mostrar video
+            videoPlayer.srcObject = remoteStream;
+            videoPlayer.classList.remove('hidden');
+            waitingMessage.classList.add('hidden');
+            
+            // Actualizar UI
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = 'Conectado en vivo';
+            qualityBadge.textContent = 'LIVE';
+            qualityBadge.classList.add('live');
+            liveBadge.style.display = 'flex';
+            debugStatus.textContent = 'transmitiendo';
+            statsOverlay.classList.remove('hidden');
+            
+            // Detectar calidad
+            detectVideoQuality(remoteStream);
+            
+            // Iniciar monitoreo de estadísticas
+            startStatsMonitoring(remoteStream);
+            
+            // Manejar metadatos del video
+            videoPlayer.onloadedmetadata = () => {
+                console.log('🎥 Video listo para reproducir');
+                videoPlayer.play().catch(e => {
+                    console.log('Autoplay prevented:', e);
+                    // Intentar reproducir con sonido en la siguiente interacción
+                    document.addEventListener('click', () => {
+                        videoPlayer.play().catch(() => {});
+                    }, { once: true });
+                });
+            };
+
+            // Monitorear si el video se congela
+            startConnectionCheck();
+        }
+
+        // ============================================
+        // MANEJO DE EVENTOS
+        // ============================================
+        function handleDisconnect() {
+            if (!isConnected && !currentCall) return; // Ya estaba desconectado
+            
+            isConnected = false;
+            stopStatsMonitoring();
+            stopConnectionCheck();
+            
+            videoPlayer.srcObject = null;
+            videoPlayer.classList.add('hidden');
+            waitingMessage.classList.remove('hidden');
+            waitingText.textContent = 'Conexión perdida';
+            updateStatus('Reconectando...');
+            statusDot.className = 'status-dot';
+            statusText.textContent = 'Desconectado';
+            qualityBadge.textContent = 'Esperando...';
+            qualityBadge.classList.remove('live');
+            statsOverlay.classList.add('hidden');
+            debugStatus.textContent = 'desconectado';
+            retryBtn.classList.remove('hidden');
+            
+            if (currentCall) {
+                try {
+                    currentCall.close();
+                } catch (e) {}
+                currentCall = null;
+            }
+            
+            scheduleReconnect();
+        }
+
+        function handlePeerError(err) {
+            let message = 'Error de conexión';
+            
+            switch(err.type) {
+                case 'peer-unavailable':
+                    message = 'La mesa no está transmitiendo. Esperando...';
+                    statusDot.className = 'status-dot';
+                    scheduleReconnect();
+                    break;
+                case 'network':
+                    message = 'Error de red. Verifica tu conexión.';
+                    statusDot.className = 'status-dot error';
+                    retryBtn.classList.remove('hidden');
+                    break;
+                case 'server-error':
+                    message = 'Error del servidor. Reintentando...';
+                    setTimeout(init, 5000);
+                    return;
+                case 'unavailable-id':
+                    message = 'ID no disponible. Recargando...';
+                    setTimeout(() => location.reload(), 3000);
+                    return;
+                case 'browser-incompatible':
+                    message = 'Navegador no compatible con WebRTC';
+                    statusDot.className = 'status-dot error';
+                    break;
+                default:
+                    statusDot.className = 'status-dot error';
+                    retryBtn.classList.remove('hidden');
+            }
+            
+            updateStatus(message);
+            statusText.textContent = 'Error';
+            debugStatus.textContent = `error: ${err.type}`;
+        }
+
+        function scheduleReconnect() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                showError('No se pudo conectar después de varios intentos. Verifica que la mesa esté transmitiendo.');
+                return;
+            }
+            
+            reconnectAttempts++;
+            retryCountDisplay.textContent = reconnectAttempts;
+            const delay = Math.min(3000 * reconnectAttempts, 15000); // Backoff exponencial
+            
+            console.log(`🔄 Reintentando en ${delay}ms (intento ${reconnectAttempts})`);
+            updateStatus(`Reintentando en ${delay/1000}s...`);
+            
+            setTimeout(() => {
+                if (!isConnected && peer && !peer.destroyed) {
+                    connectToBroadcaster();
+                }
+            }, delay);
+        }
+
+        function showError(msg) {
+            waitingMessage.innerHTML = `
+                <div class="icon">⚠️</div>
+                <div>Error de Conexión</div>
+                <div class="error-message">${msg}</div>
+                <button class="retry-btn" onclick="location.reload()">Recargar página</button>
+            `;
+            debugStatus.textContent = 'error fatal';
+            statusDot.className = 'status-dot error';
+        }
+
+        function manualReconnect() {
+            reconnectAttempts = 0;
+            retryCountDisplay.textContent = '0';
+            if (!isConnected) {
+                updateStatus('Reconectando manualmente...');
+                connectToBroadcaster();
+            }
+        }
+
+        // ============================================
+        // MONITOREO DE CONEXIÓN
+        // ============================================
+        function startConnectionCheck() {
+            stopConnectionCheck();
+            let lastTime = videoPlayer.currentTime;
+            
+            connectionCheckInterval = setInterval(() => {
+                if (!isConnected) return;
+                
+                // Verificar si el video se congeló
+                if (videoPlayer.currentTime === lastTime && !videoPlayer.paused && !videoPlayer.ended) {
+                    console.log('⚠️ Posible congelamiento detectado');
+                    // No desconectar inmediatamente, podría ser un frame estático
+                }
+                lastTime = videoPlayer.currentTime;
+                
+                // Verificar estado de la llamada
+                if (currentCall && currentCall.peerConnection) {
+                    const state = currentCall.peerConnection.connectionState;
+                    if (state === 'failed' || state === 'closed') {
+                        console.log('🔌 Estado de conexión:', state);
+                        handleDisconnect();
+                    }
+                }
+            }, 5000);
+        }
+
+        function stopConnectionCheck() {
+            if (connectionCheckInterval) {
+                clearInterval(connectionCheckInterval);
+                connectionCheckInterval = null;
+            }
+        }
+
+        // ============================================
+        // ESTADÍSTICAS
+        // ============================================
+        function startStatsMonitoring(stream) {
+            stopStatsMonitoring();
+            
+            statsInterval = setInterval(async () => {
+                if (!currentCall || !currentCall.peerConnection) return;
+                
+                try {
+                    const stats = await currentCall.peerConnection.getStats();
+                    stats.forEach(report => {
+                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                            const width = report.frameWidth || 0;
+                            const height = report.frameHeight || 0;
+                            const fps = report.framesPerSecond || 0;
+                            
+                            if (width > 0 && height > 0) {
+                                document.getElementById('resolutionStat').textContent = `${width}x${height}`;
+                            }
+                            if (fps > 0) {
+                                document.getElementById('fpsStat').textContent = `${fps.toFixed(1)} fps`;
+                            }
+                        }
+                    });
+                } catch (e) {}
+            }, 2000);
+        }
+
+        function stopStatsMonitoring() {
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+        }
+
+        // ============================================
+        // UTILIDADES
+        // ============================================
+        function updateStatus(msg) {
+            connectionStatus.textContent = msg;
+            console.log('[Status]', msg);
+        }
+
+        function detectVideoQuality(stream) {
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack) {
+                const settings = videoTrack.getSettings();
+                const width = settings.width || 0;
+                const height = settings.height || 0;
+                
+                console.log(`📹 Resolución detectada: ${width}x${height}`);
+                
+                let quality = 'SD';
+                if (width >= 1920) quality = 'FHD';
+                else if (width >= 1280) quality = 'HD';
+                else if (width >= 854) quality = '480p';
+                
+                qualityBadge.textContent = quality;
+                document.getElementById('resolutionStat').textContent = `${width}x${height}`;
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.log('Fullscreen no soportado');
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Event listeners del video
+        videoPlayer.addEventListener('pause', () => {
+            if (!videoPlayer.ended && isConnected) {
+                console.log('⏸️ Video pausado');
+            }
+        });
+
+        videoPlayer.addEventListener('error', (e) => {
+            console.error('Error en video:', e);
+            handleDisconnect();
+        });
+
+        // Iniciar al cargar la página
+        window.addEventListener('load', init);
+        
+        // Limpiar al cerrar
+        window.addEventListener('beforeunload', () => {
+            stopConnectionCheck();
+            stopStatsMonitoring();
+            if (currentCall) currentCall.close();
+            if (peer) peer.destroy();
+        });
+    </script>
+</body>
+</html>
